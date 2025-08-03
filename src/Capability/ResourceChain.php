@@ -14,12 +14,12 @@ namespace Mcp\Capability;
 use Mcp\Capability\Resource\CollectionInterface;
 use Mcp\Capability\Resource\IdentifierInterface;
 use Mcp\Capability\Resource\MetadataInterface;
-use Mcp\Capability\Resource\ResourceRead;
 use Mcp\Capability\Resource\ResourceReaderInterface;
-use Mcp\Capability\Resource\ResourceReadResult;
 use Mcp\Exception\InvalidCursorException;
 use Mcp\Exception\ResourceNotFoundException;
 use Mcp\Exception\ResourceReadException;
+use Mcp\Schema\Request\ReadResourceRequest;
+use Mcp\Schema\Result\ReadResourceResult;
 
 /**
  * A collection of resources. All resources need to implement IdentifierInterface.
@@ -60,18 +60,18 @@ class ResourceChain implements CollectionInterface, ResourceReaderInterface
         }
     }
 
-    public function read(ResourceRead $input): ResourceReadResult
+    public function read(ReadResourceRequest $request): ReadResourceResult
     {
         foreach ($this->items as $item) {
-            if ($item instanceof ResourceReaderInterface && $input->uri === $item->getUri()) {
+            if ($item instanceof ResourceReaderInterface && $request->uri === $item->getUri()) {
                 try {
-                    return $item->read($input);
+                    return $item->read($request);
                 } catch (\Throwable $e) {
-                    throw new ResourceReadException($input, $e);
+                    throw new ResourceReadException($request, $e);
                 }
             }
         }
 
-        throw new ResourceNotFoundException($input);
+        throw new ResourceNotFoundException($request);
     }
 }

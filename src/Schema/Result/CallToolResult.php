@@ -105,11 +105,6 @@ class CallToolResult implements ResultInterface
         return new self($contents, $data['isError'] ?? false);
     }
 
-    public static function fromResponse(Response $response): self
-    {
-        return self::fromArray($response->result);
-    }
-
     /**
      * @return array{
      *     content: array<TextContent|ImageContent|AudioContent|EmbeddedResource>,

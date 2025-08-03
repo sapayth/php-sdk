@@ -13,19 +13,16 @@ namespace Mcp\Tests\Server\RequestHandler;
 
 use Mcp\Capability\Tool\CollectionInterface;
 use Mcp\Capability\Tool\MetadataInterface;
-use Mcp\Message\Request;
-use Mcp\Server\RequestHandler\ToolListHandler;
-use PHPUnit\Framework\Attributes\CoversClass;
+use Mcp\Schema\Request\ListToolsRequest;
+use Mcp\Schema\Result\ListToolsResult;
+use Mcp\Server\RequestHandler\ListToolsHandler;
+use Nyholm\NSA;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Small;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[Small]
-#[CoversClass(ToolListHandler::class)]
 class ToolListHandlerTest extends TestCase
 {
-    public function testHandleEmpty(): void
+    public function testHandleEmpty()
     {
         $collection = $this->getMockBuilder(CollectionInterface::class)
             ->disableOriginalConstructor()
@@ -33,29 +30,35 @@ class ToolListHandlerTest extends TestCase
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn([]);
 
-        $handler = new ToolListHandler($collection);
-        $message = new Request(1, 'tools/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertEquals(1, $response->id);
-        $this->assertEquals(['tools' => []], $response->result);
+        $handler = new ListToolsHandler($collection);
+        $request = new ListToolsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListToolsResult::class, $response->result);
+        $this->assertSame(1, $response->id);
+        $this->assertSame([], $response->result->tools);
     }
 
     /**
      * @param iterable<MetadataInterface> $metadataList
      */
     #[DataProvider('metadataProvider')]
-    public function testHandleReturnAll(iterable $metadataList): void
+    public function testHandleReturnAll(iterable $metadataList)
     {
         $collection = $this->getMockBuilder(CollectionInterface::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getMetadata'])
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn($metadataList);
-        $handler = new ToolListHandler($collection);
-        $message = new Request(1, 'tools/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(1, $response->result['tools']);
-        $this->assertArrayNotHasKey('nextCursor', $response->result);
+        $handler = new ListToolsHandler($collection);
+        $request = new ListToolsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListToolsResult::class, $response->result);
+        $this->assertCount(1, $response->result->tools);
+        $this->assertNull($response->result->nextCursor);
     }
 
     /**
@@ -71,8 +74,7 @@ class ToolListHandlerTest extends TestCase
         ];
     }
 
-    #[Test]
-    public function handlePagination(): void
+    public function testHandlePagination()
     {
         $item = self::createMetadataItem();
         $collection = $this->getMockBuilder(CollectionInterface::class)
@@ -80,11 +82,14 @@ class ToolListHandlerTest extends TestCase
             ->onlyMethods(['getMetadata'])
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn([$item, $item]);
-        $handler = new ToolListHandler($collection, 2);
-        $message = new Request(1, 'tools/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(2, $response->result['tools']);
-        $this->assertArrayHasKey('nextCursor', $response->result);
+        $handler = new ListToolsHandler($collection, 2);
+        $request = new ListToolsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListToolsResult::class, $response->result);
+        $this->assertCount(2, $response->result->tools);
+        $this->assertNotNull($response->result->nextCursor);
     }
 
     private static function createMetadataItem(): MetadataInterface

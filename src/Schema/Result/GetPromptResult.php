@@ -13,7 +13,6 @@ namespace Mcp\Schema\Result;
 
 use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\Content\PromptMessage;
-use Mcp\Schema\JsonRpc\Response;
 use Mcp\Schema\JsonRpc\ResultInterface;
 
 /**
@@ -58,11 +57,6 @@ class GetPromptResult implements ResultInterface
         }
 
         return new self($messages, $data['description'] ?? null);
-    }
-
-    public static function fromResponse(Response $response): self
-    {
-        return self::fromArray($response->result);
     }
 
     /**

@@ -11,35 +11,36 @@
 
 namespace Mcp\Server\RequestHandler;
 
-use Mcp\Message\Request;
-use Mcp\Message\Response;
+use Mcp\Schema\Implementation;
+use Mcp\Schema\JsonRpc\HasMethodInterface;
+use Mcp\Schema\JsonRpc\Response;
+use Mcp\Schema\Request\InitializeRequest;
+use Mcp\Schema\Result\InitializeResult;
+use Mcp\Schema\ServerCapabilities;
+use Mcp\Server\MethodHandlerInterface;
 
 /**
  * @author Christopher Hertel <mail@christopher-hertel.de>
  */
-final class InitializeHandler extends BaseRequestHandler
+final class InitializeHandler implements MethodHandlerInterface
 {
     public function __construct(
-        private readonly string $name = 'app',
-        private readonly string $version = 'dev',
+        public readonly ?ServerCapabilities $capabilities = new ServerCapabilities(),
+        public readonly ?Implementation $serverInfo = new Implementation(),
     ) {
     }
 
-    public function createResponse(Request $message): Response
+    public function supports(HasMethodInterface $message): bool
     {
-        return new Response($message->id, [
-            'protocolVersion' => '2025-03-26',
-            'capabilities' => [
-                'prompts' => ['listChanged' => false],
-                'tools' => ['listChanged' => false],
-                'resources' => ['listChanged' => false, 'subscribe' => false],
-            ],
-            'serverInfo' => ['name' => $this->name, 'version' => $this->version],
-        ]);
+        return $message instanceof InitializeRequest;
     }
 
-    protected function supportedMethod(): string
+    public function handle(InitializeRequest|HasMethodInterface $message): Response
     {
-        return 'initialize';
+        \assert($message instanceof InitializeRequest);
+
+        return new Response($message->getId(),
+            new InitializeResult($this->capabilities, $this->serverInfo),
+        );
     }
 }

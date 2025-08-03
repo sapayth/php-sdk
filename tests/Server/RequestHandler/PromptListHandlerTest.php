@@ -13,43 +13,50 @@ namespace Mcp\Tests\Server\RequestHandler;
 
 use Mcp\Capability\Prompt\MetadataInterface;
 use Mcp\Capability\PromptChain;
-use Mcp\Message\Request;
-use Mcp\Server\RequestHandler\PromptListHandler;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Small;
+use Mcp\Schema\Request\ListPromptsRequest;
+use Mcp\Schema\Result\ListPromptsResult;
+use Mcp\Server\RequestHandler\ListPromptsHandler;
+use Nyholm\NSA;
 use PHPUnit\Framework\TestCase;
 
-#[Small]
-#[CoversClass(PromptListHandler::class)]
 class PromptListHandlerTest extends TestCase
 {
-    public function testHandleEmpty(): void
+    public function testHandleEmpty()
     {
-        $handler = new PromptListHandler(new PromptChain([]));
-        $message = new Request(1, 'prompts/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertEquals(1, $response->id);
-        $this->assertEquals(['prompts' => []], $response->result);
+        $handler = new ListPromptsHandler(new PromptChain([]));
+        $request = new ListPromptsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListPromptsResult::class, $response->result);
+        $this->assertEquals(1, $response->getId());
+        $this->assertEquals([], $response->result->prompts);
     }
 
-    public function testHandleReturnAll(): void
+    public function testHandleReturnAll()
     {
         $item = self::createMetadataItem();
-        $handler = new PromptListHandler(new PromptChain([$item]));
-        $message = new Request(1, 'prompts/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(1, $response->result['prompts']);
-        $this->assertArrayNotHasKey('nextCursor', $response->result);
+        $handler = new ListPromptsHandler(new PromptChain([$item]));
+        $request = new ListPromptsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListPromptsResult::class, $response->result);
+        $this->assertCount(1, $response->result->prompts);
+        $this->assertNull($response->result->nextCursor);
     }
 
-    public function testHandlePagination(): void
+    public function testHandlePagination()
     {
         $item = self::createMetadataItem();
-        $handler = new PromptListHandler(new PromptChain([$item, $item]), 2);
-        $message = new Request(1, 'prompts/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(2, $response->result['prompts']);
-        $this->assertArrayHasKey('nextCursor', $response->result);
+        $handler = new ListPromptsHandler(new PromptChain([$item, $item]), 2);
+        $request = new ListPromptsRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListPromptsResult::class, $response->result);
+        $this->assertCount(2, $response->result->prompts);
+        $this->assertNotNull($response->result->nextCursor);
     }
 
     private static function createMetadataItem(): MetadataInterface

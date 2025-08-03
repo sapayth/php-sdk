@@ -11,7 +11,7 @@
 
 namespace Mcp;
 
-use Mcp\Server\JsonRpcHandler;
+use Mcp\JsonRpc\Handler;
 use Mcp\Server\TransportInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -22,7 +22,7 @@ use Psr\Log\NullLogger;
 final class Server
 {
     public function __construct(
-        private readonly JsonRpcHandler $jsonRpcHandler,
+        private readonly Handler $jsonRpcHandler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }

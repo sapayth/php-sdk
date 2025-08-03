@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Resource\ResourceRead;
+use Mcp\Schema\Request\ReadResourceRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,8 +19,8 @@ use Mcp\Capability\Resource\ResourceRead;
 final class ResourceNotFoundException extends \RuntimeException implements NotFoundExceptionInterface
 {
     public function __construct(
-        public readonly ResourceRead $readRequest,
+        public readonly ReadResourceRequest $request,
     ) {
-        parent::__construct(\sprintf('Resource not found for uri: "%s"', $readRequest->uri));
+        parent::__construct(\sprintf('Resource not found for uri: "%s".', $request->uri));
     }
 }

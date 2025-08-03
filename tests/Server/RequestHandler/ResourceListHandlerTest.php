@@ -13,18 +13,16 @@ namespace Mcp\Tests\Server\RequestHandler;
 
 use Mcp\Capability\Resource\CollectionInterface;
 use Mcp\Capability\Resource\MetadataInterface;
-use Mcp\Message\Request;
-use Mcp\Server\RequestHandler\ResourceListHandler;
-use PHPUnit\Framework\Attributes\CoversClass;
+use Mcp\Schema\Request\ListResourcesRequest;
+use Mcp\Schema\Result\ListResourcesResult;
+use Mcp\Server\RequestHandler\ListResourcesHandler;
+use Nyholm\NSA;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Small;
 use PHPUnit\Framework\TestCase;
 
-#[Small]
-#[CoversClass(ResourceListHandler::class)]
 class ResourceListHandlerTest extends TestCase
 {
-    public function testHandleEmpty(): void
+    public function testHandleEmpty()
     {
         $collection = $this->getMockBuilder(CollectionInterface::class)
             ->disableOriginalConstructor()
@@ -32,29 +30,36 @@ class ResourceListHandlerTest extends TestCase
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn([]);
 
-        $handler = new ResourceListHandler($collection);
-        $message = new Request(1, 'resources/list', []);
-        $response = $handler->createResponse($message);
+        $handler = new ListResourcesHandler($collection);
+        $request = new ListResourcesRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListResourcesResult::class, $response->result);
         $this->assertEquals(1, $response->id);
-        $this->assertEquals(['resources' => []], $response->result);
+        $this->assertEquals([], $response->result->resources);
     }
 
     /**
      * @param iterable<MetadataInterface> $metadataList
      */
     #[DataProvider('metadataProvider')]
-    public function testHandleReturnAll(iterable $metadataList): void
+    public function testHandleReturnAll(iterable $metadataList)
     {
         $collection = $this->getMockBuilder(CollectionInterface::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getMetadata'])
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn($metadataList);
-        $handler = new ResourceListHandler($collection);
-        $message = new Request(1, 'resources/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(1, $response->result['resources']);
-        $this->assertArrayNotHasKey('nextCursor', $response->result);
+
+        $handler = new ListResourcesHandler($collection);
+        $request = new ListResourcesRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListResourcesResult::class, $response->result);
+        $this->assertCount(1, $response->result->resources);
+        $this->assertNull($response->result->nextCursor);
     }
 
     /**
@@ -70,7 +75,7 @@ class ResourceListHandlerTest extends TestCase
         ];
     }
 
-    public function testHandlePagination(): void
+    public function testHandlePagination()
     {
         $item = self::createMetadataItem();
         $collection = $this->getMockBuilder(CollectionInterface::class)
@@ -78,11 +83,15 @@ class ResourceListHandlerTest extends TestCase
             ->onlyMethods(['getMetadata'])
             ->getMock();
         $collection->expects($this->once())->method('getMetadata')->willReturn([$item, $item]);
-        $handler = new ResourceListHandler($collection, 2);
-        $message = new Request(1, 'resources/list', []);
-        $response = $handler->createResponse($message);
-        $this->assertCount(2, $response->result['resources']);
-        $this->assertArrayHasKey('nextCursor', $response->result);
+
+        $handler = new ListResourcesHandler($collection, 2);
+        $request = new ListResourcesRequest();
+        NSA::setProperty($request, 'id', 1);
+        $response = $handler->handle($request);
+
+        $this->assertInstanceOf(ListResourcesResult::class, $response->result);
+        $this->assertCount(2, $response->result->resources);
+        $this->assertNotNull($response->result->nextCursor);
     }
 
     private static function createMetadataItem(): MetadataInterface
@@ -95,7 +104,7 @@ class ResourceListHandlerTest extends TestCase
 
             public function getName(): string
             {
-                return 'src/SomeFile.php';
+                return 'SomeFile';
             }
 
             public function getDescription(): string

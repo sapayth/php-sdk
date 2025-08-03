@@ -12,26 +12,28 @@
 namespace App;
 
 use Mcp\Capability\Prompt\MetadataInterface;
-use Mcp\Capability\Prompt\PromptGet;
-use Mcp\Capability\Prompt\PromptGetResult;
-use Mcp\Capability\Prompt\PromptGetResultMessages;
 use Mcp\Capability\Prompt\PromptGetterInterface;
+use Mcp\Schema\Content\PromptMessage;
+use Mcp\Schema\Content\TextContent;
+use Mcp\Schema\Enum\Role;
+use Mcp\Schema\Request\GetPromptRequest;
+use Mcp\Schema\Result\GetPromptResult;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */
 class ExamplePrompt implements MetadataInterface, PromptGetterInterface
 {
-    public function get(PromptGet $input): PromptGetResult
+    public function get(GetPromptRequest $request): GetPromptResult
     {
-        $firstName = $input->arguments['first name'] ?? null;
+        $firstName = $request->arguments['firstName'] ?? null;
 
-        return new PromptGetResult(
+        return new GetPromptResult(
+            [new PromptMessage(
+                Role::User,
+                new TextContent(\sprintf('Hello %s', $firstName ?? 'World')),
+            )],
             $this->getDescription(),
-            [new PromptGetResultMessages(
-                'user',
-                \sprintf('Hello %s', $firstName ?? 'World')
-            )]
         );
     }
 

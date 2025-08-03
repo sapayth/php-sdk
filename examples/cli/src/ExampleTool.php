@@ -12,22 +12,25 @@
 namespace App;
 
 use Mcp\Capability\Tool\MetadataInterface;
-use Mcp\Capability\Tool\ToolCall;
-use Mcp\Capability\Tool\ToolCallResult;
 use Mcp\Capability\Tool\ToolExecutorInterface;
+use Mcp\Schema\Content\TextContent;
+use Mcp\Schema\Request\CallToolRequest;
+use Mcp\Schema\Result\CallToolResult;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */
 class ExampleTool implements MetadataInterface, ToolExecutorInterface
 {
-    public function call(ToolCall $input): ToolCallResult
+    public function call(CallToolRequest $request): CallToolResult
     {
-        $format = $input->arguments['format'] ?? 'Y-m-d H:i:s';
+        $format = $request->arguments['format'] ?? 'Y-m-d H:i:s';
 
-        return new ToolCallResult(
-            (new \DateTime('now', new \DateTimeZone('UTC')))->format($format)
-        );
+        return new CallToolResult([
+            new TextContent(
+                (new \DateTime('now', new \DateTimeZone('UTC')))->format($format),
+            ),
+        ]);
     }
 
     public function getName(): string

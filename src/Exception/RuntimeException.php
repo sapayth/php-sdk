@@ -14,6 +14,6 @@ namespace Mcp\Exception;
 /**
  * @author Christopher Hertel <mail@christopher-hertel.de>
  */
-class RuntimeException extends \RuntimeException implements ExceptionInterface
+final class RuntimeException extends \RuntimeException implements ExceptionInterface
 {
 }

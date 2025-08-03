@@ -14,17 +14,9 @@ namespace App;
 use Mcp\Capability\PromptChain;
 use Mcp\Capability\ResourceChain;
 use Mcp\Capability\ToolChain;
-use Mcp\Server\NotificationHandler\InitializedHandler;
-use Mcp\Server\NotificationHandlerInterface;
-use Mcp\Server\RequestHandler\InitializeHandler;
-use Mcp\Server\RequestHandler\PingHandler;
-use Mcp\Server\RequestHandler\PromptGetHandler;
-use Mcp\Server\RequestHandler\PromptListHandler;
-use Mcp\Server\RequestHandler\ResourceListHandler;
-use Mcp\Server\RequestHandler\ResourceReadHandler;
-use Mcp\Server\RequestHandler\ToolCallHandler;
-use Mcp\Server\RequestHandler\ToolListHandler;
-use Mcp\Server\RequestHandlerInterface;
+use Mcp\Server\MethodHandlerInterface;
+use Mcp\Server\NotificationHandler;
+use Mcp\Server\RequestHandler;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -32,9 +24,9 @@ use Mcp\Server\RequestHandlerInterface;
 class Builder
 {
     /**
-     * @return list<RequestHandlerInterface>
+     * @return list<MethodHandlerInterface>
      */
-    public static function buildRequestHandlers(): array
+    public static function buildMethodHandlers(): array
     {
         $promptManager = new PromptChain([
             new ExamplePrompt(),
@@ -49,24 +41,15 @@ class Builder
         ]);
 
         return [
-            new InitializeHandler(),
-            new PingHandler(),
-            new PromptListHandler($promptManager),
-            new PromptGetHandler($promptManager),
-            new ResourceListHandler($resourceManager),
-            new ResourceReadHandler($resourceManager),
-            new ToolCallHandler($toolManager),
-            new ToolListHandler($toolManager),
-        ];
-    }
-
-    /**
-     * @return list<NotificationHandlerInterface>
-     */
-    public static function buildNotificationHandlers(): array
-    {
-        return [
-            new InitializedHandler(),
+            new NotificationHandler\InitializedHandler(),
+            new RequestHandler\InitializeHandler(),
+            new RequestHandler\PingHandler(),
+            new RequestHandler\ListPromptsHandler($promptManager),
+            new RequestHandler\GetPromptHandler($promptManager),
+            new RequestHandler\ListResourcesHandler($resourceManager),
+            new RequestHandler\ReadResourceHandler($resourceManager),
+            new RequestHandler\CallToolHandler($toolManager),
+            new RequestHandler\ListToolsHandler($toolManager),
         ];
     }
 }

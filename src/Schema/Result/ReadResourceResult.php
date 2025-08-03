@@ -62,11 +62,6 @@ class ReadResourceResult implements ResultInterface
         return new self($contents);
     }
 
-    public static function fromResponse(Response $response): self
-    {
-        return self::fromArray($response->result);
-    }
-
     /**
      * @return array{
      *     contents: array<BlobResourceContents|TextResourceContents>,

@@ -12,19 +12,20 @@
 namespace Mcp\Server;
 
 use Mcp\Exception\ExceptionInterface;
-use Mcp\Message\Error;
-use Mcp\Message\Request;
-use Mcp\Message\Response;
+use Mcp\Schema\JsonRpc\Error;
+use Mcp\Schema\JsonRpc\HasMethodInterface;
+use Mcp\Schema\JsonRpc\Request;
+use Mcp\Schema\JsonRpc\Response;
 
 /**
  * @author Christopher Hertel <mail@christopher-hertel.de>
  */
-interface RequestHandlerInterface
+interface MethodHandlerInterface
 {
-    public function supports(Request $message): bool;
+    public function supports(HasMethodInterface $message): bool;
 
     /**
      * @throws ExceptionInterface When the handler encounters an error processing the request
      */
-    public function createResponse(Request $message): Response|Error;
+    public function handle(HasMethodInterface $message): Response|Error|null;
 }

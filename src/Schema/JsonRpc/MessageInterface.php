@@ -18,4 +18,5 @@ namespace Mcp\Schema\JsonRpc;
  */
 interface MessageInterface extends \JsonSerializable
 {
+    public const JSONRPC_VERSION = '2.0';
 }

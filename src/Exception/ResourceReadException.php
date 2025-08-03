@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Resource\ResourceRead;
+use Mcp\Schema\Request\ReadResourceRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,9 +19,9 @@ use Mcp\Capability\Resource\ResourceRead;
 final class ResourceReadException extends \RuntimeException implements ExceptionInterface
 {
     public function __construct(
-        public readonly ResourceRead $readRequest,
+        public readonly ReadResourceRequest $request,
         ?\Throwable $previous = null,
     ) {
-        parent::__construct(\sprintf('Reading resource "%s" failed with error: %s', $readRequest->uri, $previous?->getMessage() ?? ''), previous: $previous);
+        parent::__construct(\sprintf('Reading resource "%s" failed with error: "%s".', $request->uri, $previous?->getMessage() ?? ''), previous: $previous);
     }
 }

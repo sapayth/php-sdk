@@ -9,81 +9,75 @@
  * file that was distributed with this source code.
  */
 
-namespace Mcp\Tests\Server;
+namespace Mcp\Tests\JsonRpc;
 
-use Mcp\Message\Factory;
-use Mcp\Message\Response;
-use Mcp\Server\JsonRpcHandler;
-use Mcp\Server\NotificationHandlerInterface;
-use Mcp\Server\RequestHandlerInterface;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Small;
+use Mcp\JsonRpc\Handler;
+use Mcp\JsonRpc\MessageFactory;
+use Mcp\Schema\JsonRpc\Response;
+use Mcp\Server\MethodHandlerInterface;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 
-#[Small]
-#[CoversClass(JsonRpcHandler::class)]
-class JsonRpcHandlerTest extends TestCase
+class HandlerTest extends TestCase
 {
     #[TestDox('Make sure a single notification can be handled by multiple handlers.')]
-    public function testHandleMultipleNotifications(): void
+    public function testHandleMultipleNotifications()
     {
-        $handlerA = $this->getMockBuilder(NotificationHandlerInterface::class)
+        $handlerA = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerA->method('supports')->willReturn(true);
         $handlerA->expects($this->once())->method('handle');
 
-        $handlerB = $this->getMockBuilder(NotificationHandlerInterface::class)
+        $handlerB = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerB->method('supports')->willReturn(false);
         $handlerB->expects($this->never())->method('handle');
 
-        $handlerC = $this->getMockBuilder(NotificationHandlerInterface::class)
+        $handlerC = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerC->method('supports')->willReturn(true);
         $handlerC->expects($this->once())->method('handle');
 
-        $jsonRpc = new JsonRpcHandler(new Factory(), [], [$handlerA, $handlerB, $handlerC], new NullLogger());
+        $jsonRpc = new Handler(MessageFactory::make(), [$handlerA, $handlerB, $handlerC]);
         $result = $jsonRpc->process(
-            '{"jsonrpc": "2.0", "id": 1, "method": "notifications/foobar"}'
+            '{"jsonrpc": "2.0", "method": "notifications/initialized"}'
         );
         iterator_to_array($result);
     }
 
     #[TestDox('Make sure a single request can NOT be handled by multiple handlers.')]
-    public function testHandleMultipleRequests(): void
+    public function testHandleMultipleRequests()
     {
-        $handlerA = $this->getMockBuilder(RequestHandlerInterface::class)
+        $handlerA = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['supports', 'createResponse'])
+            ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerA->method('supports')->willReturn(true);
-        $handlerA->expects($this->once())->method('createResponse')->willReturn(new Response(1));
+        $handlerA->expects($this->once())->method('handle')->willReturn(new Response(1, ['result' => 'success']));
 
-        $handlerB = $this->getMockBuilder(RequestHandlerInterface::class)
+        $handlerB = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['supports', 'createResponse'])
+            ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerB->method('supports')->willReturn(false);
-        $handlerB->expects($this->never())->method('createResponse');
+        $handlerB->expects($this->never())->method('handle');
 
-        $handlerC = $this->getMockBuilder(RequestHandlerInterface::class)
+        $handlerC = $this->getMockBuilder(MethodHandlerInterface::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['supports', 'createResponse'])
+            ->onlyMethods(['supports', 'handle'])
             ->getMock();
         $handlerC->method('supports')->willReturn(true);
-        $handlerC->expects($this->never())->method('createResponse');
+        $handlerC->expects($this->never())->method('handle');
 
-        $jsonRpc = new JsonRpcHandler(new Factory(), [$handlerA, $handlerB, $handlerC], [], new NullLogger());
+        $jsonRpc = new Handler(MessageFactory::make(), [$handlerA, $handlerB, $handlerC]);
         $result = $jsonRpc->process(
-            '{"jsonrpc": "2.0", "id": 1, "method": "request/foobar"}'
+            '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'
         );
         iterator_to_array($result);
     }

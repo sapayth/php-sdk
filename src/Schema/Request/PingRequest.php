@@ -11,7 +11,6 @@
 
 namespace Mcp\Schema\Request;
 
-use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\JsonRpc\Request;
 
 /**
@@ -22,27 +21,18 @@ use Mcp\Schema\JsonRpc\Request;
  */
 class PingRequest extends Request
 {
-    /**
-     * @param ?array<string, mixed> $_meta
-     */
-    public function __construct(
-        string|int $id,
-        public readonly ?array $_meta = null,
-    ) {
-        $params = [];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'ping', $params);
+    public static function getMethod(): string
+    {
+        return 'ping';
     }
 
-    public static function fromRequest(Request $request): self
+    protected static function fromParams(?array $params): Request
     {
-        if ('ping' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a ping request');
-        }
+        return new self();
+    }
 
-        return new self($request->id, $request->params['_meta'] ?? null);
+    protected function getParams(): ?array
+    {
+        return null;
     }
 }

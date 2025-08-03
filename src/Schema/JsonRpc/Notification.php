@@ -12,7 +12,6 @@
 namespace Mcp\Schema\JsonRpc;
 
 use Mcp\Exception\InvalidArgumentException;
-use Mcp\Schema\Constants;
 
 /**
  * @phpstan-type NotificationData array{
@@ -23,17 +22,14 @@ use Mcp\Schema\Constants;
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class Notification implements MessageInterface
+abstract class Notification implements HasMethodInterface, MessageInterface
 {
     /**
-     * @param string                $method the name of the method to be invoked
-     * @param ?array<string, mixed> $params parameters for the method
+     * @var array<string, mixed>|null
      */
-    public function __construct(
-        public readonly string $method,
-        public readonly ?array $params = null,
-    ) {
-    }
+    protected ?array $meta;
+
+    abstract public static function getMethod(): string;
 
     /**
      * @param NotificationData $data
@@ -51,16 +47,19 @@ class Notification implements MessageInterface
             throw new InvalidArgumentException('"params" for Notification must be an array/object or null.');
         }
 
-        return new self($data['method'], $params);
+        $notification = static::fromParams($params);
+
+        if (isset($data['params']['_meta'])) {
+            $notification->meta = $data['params']['_meta'];
+        }
+
+        return $notification;
     }
 
     /**
-     * @return null
+     * @param array<string, mixed>|null $params
      */
-    public function getId()
-    {
-        return null;
-    }
+    abstract protected static function fromParams(?array $params): self;
 
     /**
      * @return NotificationData
@@ -68,13 +67,22 @@ class Notification implements MessageInterface
     public function jsonSerialize(): array
     {
         $array = [
-            'jsonrpc' => Constants::JSONRPC_VERSION,
-            'method' => $this->method,
+            'jsonrpc' => MessageInterface::JSONRPC_VERSION,
+            'method' => static::getMethod(),
         ];
-        if (null !== $this->params) {
-            $array['params'] = $this->params;
+        if (null !== $params = $this->getParams()) {
+            $array['params'] = $params;
+        }
+
+        if (null !== $this->meta && !isset($params['meta'])) {
+            $array['params']['_meta'] = $this->meta;
         }
 
         return $array;
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    abstract protected function getParams(): ?array;
 }

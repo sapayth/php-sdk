@@ -11,7 +11,6 @@
 
 namespace Mcp\Schema\Notification;
 
-use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\JsonRpc\Notification;
 
 /**
@@ -21,26 +20,18 @@ use Mcp\Schema\JsonRpc\Notification;
  */
 class ResourceListChangedNotification extends Notification
 {
-    /**
-     * @param array<string, mixed>|null $_meta
-     */
-    public function __construct(
-        public readonly ?array $_meta = null,
-    ) {
-        $params = [];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct('notifications/resources/list_changed', $params);
+    public static function getMethod(): string
+    {
+        return 'notifications/resources/list_changed';
     }
 
-    public static function fromNotification(Notification $notification): self
+    protected static function fromParams(?array $params): Notification
     {
-        if ('notifications/resources/list_changed' !== $notification->method) {
-            throw new InvalidArgumentException('Notification is not a notifications/resources/list_changed notification');
-        }
+        return new self();
+    }
 
-        return new self($notification->params['_meta'] ?? null);
+    protected function getParams(): ?array
+    {
+        return null;
     }
 }

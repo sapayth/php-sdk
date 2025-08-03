@@ -12,21 +12,21 @@
 namespace App;
 
 use Mcp\Capability\Resource\MetadataInterface;
-use Mcp\Capability\Resource\ResourceRead;
 use Mcp\Capability\Resource\ResourceReaderInterface;
-use Mcp\Capability\Resource\ResourceReadResult;
+use Mcp\Schema\Content\TextResourceContents;
+use Mcp\Schema\Request\ReadResourceRequest;
+use Mcp\Schema\Result\ReadResourceResult;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
  */
 class ExampleResource implements MetadataInterface, ResourceReaderInterface
 {
-    public function read(ResourceRead $input): ResourceReadResult
+    public function read(ReadResourceRequest $request): ReadResourceResult
     {
-        return new ResourceReadResult(
-            'Content of '.$this->getName(),
-            $this->getUri(),
-        );
+        return new ReadResourceResult([
+            new TextResourceContents($this->getUri(), null, 'Content of My Resource'),
+        ]);
     }
 
     public function getUri(): string
@@ -36,7 +36,7 @@ class ExampleResource implements MetadataInterface, ResourceReaderInterface
 
     public function getName(): string
     {
-        return 'My resource';
+        return 'my-resource';
     }
 
     public function getDescription(): ?string

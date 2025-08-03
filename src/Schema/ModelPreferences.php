@@ -24,6 +24,13 @@ namespace Mcp\Schema;
  * up to the client to decide how to interpret these preferences and how to
  * balance them against other considerations.
  *
+ * @phpstan-type ModelPreferencesData array{
+ *     hints?: ModelHint[],
+ *     costPriority?: float,
+ *     speedPriority?: float,
+ *     intelligencePriority?: float,
+ * }
+ *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
 class ModelPreferences implements \JsonSerializable
@@ -50,12 +57,20 @@ class ModelPreferences implements \JsonSerializable
     }
 
     /**
-     * @return array{
-     *     hints?: ModelHint[],
-     *     costPriority?: float,
-     *     speedPriority?: float,
-     *     intelligencePriority?: float,
-     * }
+     * @param ModelPreferencesData $preferences
+     */
+    public static function fromArray(array $preferences): self
+    {
+        return new self(
+            $preferences['hints'] ?? null,
+            $preferences['costPriority'] ?? null,
+            $preferences['speedPriority'] ?? null,
+            $preferences['intelligencePriority'] ?? null,
+        );
+    }
+
+    /**
+     * @return ModelPreferencesData
      */
     public function jsonSerialize(): array
     {

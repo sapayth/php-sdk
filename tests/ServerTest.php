@@ -11,20 +11,16 @@
 
 namespace Mcp\Tests;
 
+use Mcp\JsonRpc\Handler;
 use Mcp\Server;
-use Mcp\Server\JsonRpcHandler;
-use Mcp\Tests\Fixtures\InMemoryTransport;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Small;
+use Mcp\Server\Transport\InMemoryTransport;
 use PHPUnit\Framework\MockObject\Stub\Exception;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
-#[Small]
-#[CoversClass(Server::class)]
 class ServerTest extends TestCase
 {
-    public function testJsonExceptions(): void
+    public function testJsonExceptions()
     {
         $logger = $this->getMockBuilder(NullLogger::class)
             ->disableOriginalConstructor()
@@ -32,7 +28,7 @@ class ServerTest extends TestCase
             ->getMock();
         $logger->expects($this->once())->method('error');
 
-        $handler = $this->getMockBuilder(JsonRpcHandler::class)
+        $handler = $this->getMockBuilder(Handler::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['process'])
             ->getMock();

@@ -12,7 +12,6 @@
 namespace Mcp\Schema\JsonRpc;
 
 use Mcp\Exception\InvalidArgumentException;
-use Mcp\Schema\Constants;
 
 /**
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
@@ -45,7 +44,7 @@ class Response implements MessageInterface
      */
     public static function fromArray(array $data): self
     {
-        if (($data['jsonrpc'] ?? null) !== Constants::JSONRPC_VERSION) {
+        if (($data['jsonrpc'] ?? null) !== MessageInterface::JSONRPC_VERSION) {
             throw new InvalidArgumentException('Invalid or missing "jsonrpc" version for Response.');
         }
         if (!isset($data['id'])) {
@@ -71,7 +70,7 @@ class Response implements MessageInterface
     public function jsonSerialize(): array
     {
         return [
-            'jsonrpc' => Constants::JSONRPC_VERSION,
+            'jsonrpc' => MessageInterface::JSONRPC_VERSION,
             'id' => $this->id,
             'result' => $this->result,
         ];

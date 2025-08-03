@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Tool\ToolCall;
+use Mcp\Schema\Request\CallToolRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,9 +19,9 @@ use Mcp\Capability\Tool\ToolCall;
 final class ToolExecutionException extends \RuntimeException implements ExceptionInterface
 {
     public function __construct(
-        public readonly ToolCall $toolCall,
+        public readonly CallToolRequest $request,
         ?\Throwable $previous = null,
     ) {
-        parent::__construct(\sprintf('Execution of tool "%s" failed with error: %s', $toolCall->name, $previous?->getMessage() ?? ''), previous: $previous);
+        parent::__construct(\sprintf('Execution of tool "%s" failed with error: "%s".', $request->name, $previous?->getMessage() ?? ''), previous: $previous);
     }
 }

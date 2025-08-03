@@ -11,7 +11,6 @@
 
 namespace Mcp\Schema\Request;
 
-use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\JsonRpc\Request;
 
 /**
@@ -25,30 +24,29 @@ class ListToolsRequest extends Request
      * @param string|null $cursor An opaque token representing the current pagination position.
      *
      * If provided, the server should return results starting after this cursor.
-     * @param ?array<string, mixed> $_meta optional metadata to include in the request
      */
     public function __construct(
-        string|int $id,
         public readonly ?string $cursor = null,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [];
-        if (null !== $cursor) {
-            $params['cursor'] = $cursor;
-        }
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'tools/list', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('tools/list' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a list tools request');
+        return 'tools/list';
+    }
+
+    protected static function fromParams(?array $params): Request
+    {
+        return new self($params['cursor'] ?? null);
+    }
+
+    protected function getParams(): ?array
+    {
+        $params = [];
+        if (null !== $this->cursor) {
+            $params['cursor'] = $this->cursor;
         }
 
-        return new self($request->id, $request->params['cursor'] ?? null, $request->params['_meta'] ?? null);
+        return $params ?: null;
     }
 }

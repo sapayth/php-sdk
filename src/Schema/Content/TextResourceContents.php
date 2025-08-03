@@ -61,7 +61,7 @@ class TextResourceContents extends ResourceContents
     {
         return [
             'text' => $this->text,
-            ...$this->jsonSerialize(),
+            ...parent::jsonSerialize(),
         ];
     }
 }

@@ -23,34 +23,29 @@ use Mcp\Schema\JsonRpc\Request;
 class ResourceUnsubscribeRequest extends Request
 {
     /**
-     * @param string                $uri   the URI of the resource to unsubscribe from
-     * @param ?array<string, mixed> $_meta optional metadata to include in the request
+     * @param string $uri the URI of the resource to unsubscribe from
      */
     public function __construct(
-        string|int $id,
         public readonly string $uri,
-        public readonly ?array $_meta = null,
     ) {
-        $params = ['uri' => $uri];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'resources/unsubscribe', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('resources/unsubscribe' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a resource unsubscribe request');
-        }
+        return 'resources/unsubscribe';
+    }
 
-        $params = $request->params;
-
+    protected static function fromParams(?array $params): Request
+    {
         if (!isset($params['uri']) || !\is_string($params['uri']) || empty($params['uri'])) {
             throw new InvalidArgumentException('Missing or invalid "uri" parameter for resources/unsubscribe.');
         }
 
-        return new self($request->id, $params['uri'], $params['_meta'] ?? null);
+        return new self($params['uri']);
+    }
+
+    protected function getParams(): ?array
+    {
+        return ['uri' => $this->uri];
     }
 }

@@ -23,34 +23,29 @@ use Mcp\Schema\JsonRpc\Request;
 class ResourceSubscribeRequest extends Request
 {
     /**
-     * @param string                $uri   the URI of the resource to subscribe to
-     * @param ?array<string, mixed> $_meta optional metadata to include in the request
+     * @param string $uri the URI of the resource to subscribe to
      */
     public function __construct(
-        string|int $id,
         public readonly string $uri,
-        public readonly ?array $_meta = null,
     ) {
-        $params = ['uri' => $uri];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'resources/subscribe', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('resources/subscribe' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a resource subscribe request');
-        }
+        return 'resources/subscribe';
+    }
 
-        $params = $request->params;
-
+    protected static function fromParams(?array $params): Request
+    {
         if (!isset($params['uri']) || !\is_string($params['uri']) || empty($params['uri'])) {
             throw new InvalidArgumentException('Missing or invalid "uri" parameter for resources/subscribe.');
         }
 
-        return new self($request->id, $params['uri'], $params['_meta'] ?? null);
+        return new self($params['uri']);
+    }
+
+    protected function getParams(): ?array
+    {
+        return ['uri' => $this->uri];
     }
 }

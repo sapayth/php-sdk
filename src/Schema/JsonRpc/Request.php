@@ -12,7 +12,6 @@
 namespace Mcp\Schema\JsonRpc;
 
 use Mcp\Exception\InvalidArgumentException;
-use Mcp\Schema\Constants;
 
 /**
  * @phpstan-type RequestData array{
@@ -24,31 +23,22 @@ use Mcp\Schema\Constants;
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class Request implements MessageInterface
+abstract class Request implements HasMethodInterface, MessageInterface
 {
+    protected string|int $id;
     /**
-     * @param string|int                $id     a unique identifier for the request
-     * @param string                    $method the name of the method to be invoked
-     * @param array<string, mixed>|null $params parameters for the method
+     * @var array<string, mixed>|null
      */
-    public function __construct(
-        public readonly string|int $id,
-        public readonly string $method,
-        public readonly ?array $params = null,
-    ) {
-    }
+    protected ?array $meta;
 
-    public function getId(): string|int
-    {
-        return $this->id;
-    }
+    abstract public static function getMethod(): string;
 
     /**
      * @param RequestData $data
      */
     public static function fromArray(array $data): self
     {
-        if (($data['jsonrpc'] ?? null) !== Constants::JSONRPC_VERSION) {
+        if (($data['jsonrpc'] ?? null) !== MessageInterface::JSONRPC_VERSION) {
             throw new InvalidArgumentException('Invalid or missing "jsonrpc" version for Request.');
         }
         if (!isset($data['id']) || !\is_string($data['id']) && !\is_int($data['id'])) {
@@ -65,7 +55,24 @@ class Request implements MessageInterface
             throw new InvalidArgumentException('"params" for Request must be an array/object or null.');
         }
 
-        return new self($data['id'], $data['method'], $params);
+        $request = static::fromParams($params);
+        $request->id = $data['id'];
+
+        if (isset($data['params']['_meta'])) {
+            $request->meta = $data['params']['_meta'];
+        }
+
+        return $request;
+    }
+
+    /**
+     * @param array<string, mixed>|null $params
+     */
+    abstract protected static function fromParams(?array $params): self;
+
+    public function getId(): string|int
+    {
+        return $this->id;
     }
 
     /**
@@ -74,14 +81,23 @@ class Request implements MessageInterface
     public function jsonSerialize(): array
     {
         $array = [
-            'jsonrpc' => Constants::JSONRPC_VERSION,
+            'jsonrpc' => MessageInterface::JSONRPC_VERSION,
             'id' => $this->id,
-            'method' => $this->method,
+            'method' => static::getMethod(),
         ];
-        if (null !== $this->params) {
-            $array['params'] = $this->params;
+        if (null !== $params = $this->getParams()) {
+            $array['params'] = $params;
+        }
+
+        if (null !== $this->meta && !isset($params['meta'])) {
+            $array['params']['_meta'] = $this->meta;
         }
 
         return $array;
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    abstract protected function getParams(): ?array;
 }

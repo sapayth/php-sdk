@@ -22,45 +22,59 @@ use Mcp\Schema\JsonRpc\Notification;
 class ProgressNotification extends Notification
 {
     /**
-     * @param string|int            $progressToken the progress token which was given in the initial request, used to
-     *                                             associate this notification with the request that is proceeding
-     * @param float                 $progress      The progress thus far. This should increase every time progress is
-     *                                             made, even if the total is unknown.
-     * @param ?float                $total         total number of items to process (or total progress required), if known
-     * @param ?string               $message       an optional message describing the current progress
-     * @param ?array<string, mixed> $_meta         optional metadata to include in the notification
+     * @param string|int $progressToken the progress token which was given in the initial request, used to
+     *                                  associate this notification with the request that is proceeding
+     * @param float      $progress      The progress thus far. This should increase every time progress is
+     *                                  made, even if the total is unknown.
+     * @param ?float     $total         total number of items to process (or total progress required), if known
+     * @param ?string    $message       an optional message describing the current progress
      */
     public function __construct(
         public readonly string|int $progressToken,
         public readonly float $progress,
         public readonly ?float $total = null,
         public readonly ?string $message = null,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct('notifications/progress', $params);
     }
 
-    public static function fromNotification(Notification $notification): self
+    public static function getMethod(): string
     {
-        if ('notifications/progress' !== $notification->method) {
-            throw new InvalidArgumentException('Notification is not a notifications/progress notification');
-        }
+        return 'notifications/progress';
+    }
 
-        $params = $notification->params;
-
+    protected static function fromParams(?array $params): Notification
+    {
         if (!isset($params['progressToken']) || !\is_string($params['progressToken'])) {
-            throw new InvalidArgumentException('Missing or invalid progressToken parameter for notifications/progress notification');
+            throw new InvalidArgumentException('Missing or invalid "progressToken" parameter for "notifications/progress" notification.');
         }
 
         if (!isset($params['progress']) || !\is_float($params['progress'])) {
-            throw new InvalidArgumentException('Missing or invalid progress parameter for notifications/progress notification');
+            throw new InvalidArgumentException('Missing or invalid "progress" parameter for "notifications/progress" notification.');
         }
 
-        return new self($params['progressToken'], $params['progress'], $params['total'] ?? null, $params['message'] ?? null, $params['_meta'] ?? null);
+        return new self(
+            $params['progressToken'],
+            $params['progress'],
+            $params['total'] ?? null,
+            $params['message'] ?? null,
+        );
+    }
+
+    protected function getParams(): ?array
+    {
+        $params = [
+            'progressToken' => $this->progressToken,
+            'progress' => $this->progress,
+        ];
+
+        if (null !== $this->total) {
+            $params['total'] = $this->total;
+        }
+
+        if (null !== $this->message) {
+            $params['message'] = $this->message;
+        }
+
+        return $params;
     }
 }

@@ -26,18 +26,22 @@ use Mcp\Schema\JsonRpc\Request;
  */
 class ListRootsRequest extends Request
 {
-    /**
-     * @param ?array<string, mixed> $_meta
-     */
     public function __construct(
-        string|int $id,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
+    }
 
-        parent::__construct($id, 'roots/list', $params);
+    public static function getMethod(): string
+    {
+        return 'roots/list';
+    }
+
+    protected static function fromParams(?array $params): Request
+    {
+        return new self();
+    }
+
+    protected function getParams(): ?array
+    {
+        return null;
     }
 }

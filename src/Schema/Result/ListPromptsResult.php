@@ -55,11 +55,6 @@ class ListPromptsResult implements ResultInterface
         );
     }
 
-    public static function fromResponse(Response $response): self
-    {
-        return self::fromArray($response->result);
-    }
-
     /**
      * @return array{
      *     prompts: array<Prompt>,

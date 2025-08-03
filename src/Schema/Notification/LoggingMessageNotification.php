@@ -21,51 +21,49 @@ use Mcp\Schema\JsonRpc\Notification;
 class LoggingMessageNotification extends Notification
 {
     /**
-     * @param LoggingLevel          $level  the severity of this log message
-     * @param mixed                 $data   The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here.
-     * @param string                $logger an optional name of the logger issuing this message
-     * @param ?array<string, mixed> $_meta  optional metadata to include in the notification
+     * @param LoggingLevel $level  the severity of this log message
+     * @param mixed        $data   The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here.
+     * @param ?string      $logger an optional name of the logger issuing this message
      */
     public function __construct(
         public readonly LoggingLevel $level,
         public readonly mixed $data,
         public readonly ?string $logger = null,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'level' => $level->value,
-            'data' => \is_string($data) ? $data : json_encode($data),
-        ];
-
-        if (null !== $logger) {
-            $params['logger'] = $logger;
-        }
-
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct('notifications/message', $params);
     }
 
-    public static function fromNotification(Notification $notification): self
+    public static function getMethod(): string
     {
-        if ('notifications/message' !== $notification->method) {
-            throw new InvalidArgumentException('Notification is not a notifications/message notification');
-        }
+        return 'notifications/message';
+    }
 
-        $params = $notification->params;
-
+    protected static function fromParams(?array $params): Notification
+    {
         if (!isset($params['level']) || !\is_string($params['level'])) {
-            throw new InvalidArgumentException('Missing or invalid level parameter for notifications/message notification');
+            throw new InvalidArgumentException('Missing or invalid "level" parameter for "notifications/message" notification.');
         }
 
         if (!isset($params['data'])) {
-            throw new InvalidArgumentException('Missing data parameter for notifications/message notification');
+            throw new InvalidArgumentException('Missing "data" parameter for "notifications/message" notification.');
         }
 
         $level = LoggingLevel::from($params['level']);
+        $data = \is_string($params['data']) ? $params['data'] : json_encode($params['data']);
 
-        return new self($level, $params['data'], $params['logger'] ?? null, $params['_meta'] ?? null);
+        return new self($level, $data, $params['logger'] ?? null);
+    }
+
+    protected function getParams(): ?array
+    {
+        $params = [
+            'level' => $this->level->value,
+            'data' => $this->data,
+        ];
+
+        if (null !== $this->logger) {
+            $params['logger'] = $this->logger;
+        }
+
+        return $params;
     }
 }

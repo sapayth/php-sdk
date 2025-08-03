@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Prompt\PromptGet;
+use Mcp\Schema\Request\GetPromptRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,8 +19,8 @@ use Mcp\Capability\Prompt\PromptGet;
 final class PromptNotFoundException extends \RuntimeException implements NotFoundExceptionInterface
 {
     public function __construct(
-        public readonly PromptGet $promptGet,
+        public readonly GetPromptRequest $request,
     ) {
-        parent::__construct(\sprintf('Prompt not found for name: "%s"', $promptGet->name));
+        parent::__construct(\sprintf('Prompt not found for name: "%s".', $request->name));
     }
 }

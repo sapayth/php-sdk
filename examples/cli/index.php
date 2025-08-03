@@ -22,10 +22,9 @@ $output = new SymfonyConsole\Output\ConsoleOutput($debug ? OutputInterface::VERB
 $logger = new SymfonyConsole\Logger\ConsoleLogger($output);
 
 // Configure the JsonRpcHandler and build the functionality
-$jsonRpcHandler = new Mcp\Server\JsonRpcHandler(
-    new Mcp\Message\Factory(),
-    App\Builder::buildRequestHandlers(),
-    App\Builder::buildNotificationHandlers(),
+$jsonRpcHandler = new Mcp\JsonRpc\Handler(
+    Mcp\JsonRpc\MessageFactory::make(),
+    App\Builder::buildMethodHandlers(),
     $logger
 );
 

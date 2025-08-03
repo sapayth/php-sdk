@@ -28,40 +28,37 @@ use Mcp\Schema\JsonRpc\Notification;
 class CancelledNotification extends Notification
 {
     /**
-     * @param string                $requestId The ID of the request that is being cancelled. This MUST correspond to the ID of a request previously issued in the same direction.
-     * @param ?string               $reason    An optional string describing the reason for the cancellation. This MAY be logged or presented to the user.
-     * @param ?array<string, mixed> $_meta     additional metadata about the notification
+     * @param string|int $requestId The ID of the request that is being cancelled. This MUST correspond to the ID of a request previously issued in the same direction.
+     * @param ?string    $reason    An optional string describing the reason for the cancellation. This MAY be logged or presented to the user.
      */
     public function __construct(
-        public readonly string $requestId,
+        public readonly string|int $requestId,
         public readonly ?string $reason = null,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'requestId' => $this->requestId,
-        ];
+    }
+
+    public static function getMethod(): string
+    {
+        return 'notifications/cancelled';
+    }
+
+    protected static function fromParams(?array $params): Notification
+    {
+        if (null === $params || !isset($params['requestId']) || (!\is_string($params['requestId']) && !\is_int($params['requestId']))) {
+            throw new InvalidArgumentException('Invalid or missing "requestId" parameter for "notifications/cancelled" notification.');
+        }
+
+        return new self($params['requestId'], $params['reason'] ?? null);
+    }
+
+    protected function getParams(): ?array
+    {
+        $params = ['requestId' => $this->requestId];
+
         if (null !== $this->reason) {
             $params['reason'] = $this->reason;
         }
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
 
-        parent::__construct('notifications/cancelled', $params);
-    }
-
-    public static function fromNotification(Notification $notification): self
-    {
-        if ('notifications/cancelled' !== $notification->method) {
-            throw new InvalidArgumentException('Notification is not a notifications/cancelled notification');
-        }
-
-        $params = $notification->params;
-
-        if (!isset($params['requestId']) || !\is_string($params['requestId'])) {
-            throw new InvalidArgumentException('Missing or invalid requestId parameter for notifications/cancelled notification');
-        }
-
-        return new self($params['requestId'], $params['reason'] ?? null, $params['_meta'] ?? null);
+        return $params;
     }
 }

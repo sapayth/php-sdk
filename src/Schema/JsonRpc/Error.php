@@ -12,7 +12,6 @@
 namespace Mcp\Schema\JsonRpc;
 
 use Mcp\Exception\InvalidArgumentException;
-use Mcp\Schema\Constants;
 
 /**
  * A response to a request that indicates an error occurred.
@@ -29,6 +28,14 @@ use Mcp\Schema\Constants;
  */
 class Error implements MessageInterface
 {
+    public const PARSE_ERROR = -32700;
+    public const INVALID_REQUEST = -32600;
+    public const METHOD_NOT_FOUND = -32601;
+    public const INVALID_PARAMS = -32602;
+    public const INTERNAL_ERROR = -32603;
+    public const SERVER_ERROR = -32000;
+    public const RESOURCE_NOT_FOUND = -32002;
+
     /**
      * @param int        $code    the error type that occurred
      * @param string     $message a short description of the error
@@ -47,7 +54,7 @@ class Error implements MessageInterface
      */
     public static function fromArray(array $data): self
     {
-        if (!isset($data['jsonrpc']) || Constants::JSONRPC_VERSION !== $data['jsonrpc']) {
+        if (!isset($data['jsonrpc']) || MessageInterface::JSONRPC_VERSION !== $data['jsonrpc']) {
             throw new InvalidArgumentException('Invalid or missing "jsonrpc" in Error data.');
         }
         if (!isset($data['id']) || !\is_string($data['id'])) {
@@ -65,32 +72,32 @@ class Error implements MessageInterface
 
     public static function forParseError(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::PARSE_ERROR, $message);
+        return new self($id, self::PARSE_ERROR, $message);
     }
 
     public static function forInvalidRequest(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::INVALID_REQUEST, $message);
+        return new self($id, self::INVALID_REQUEST, $message);
     }
 
     public static function forMethodNotFound(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::METHOD_NOT_FOUND, $message);
+        return new self($id, self::METHOD_NOT_FOUND, $message);
     }
 
     public static function forInvalidParams(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::INVALID_PARAMS, $message);
+        return new self($id, self::INVALID_PARAMS, $message);
     }
 
     public static function forInternalError(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::INTERNAL_ERROR, $message);
+        return new self($id, self::INTERNAL_ERROR, $message);
     }
 
     public static function forServerError(string $message, string|int $id = ''): self
     {
-        return new self($id, Constants::SERVER_ERROR, $message);
+        return new self($id, self::SERVER_ERROR, $message);
     }
 
     public function getId(): string|int
@@ -121,7 +128,7 @@ class Error implements MessageInterface
         }
 
         return [
-            'jsonrpc' => Constants::JSONRPC_VERSION,
+            'jsonrpc' => MessageInterface::JSONRPC_VERSION,
             'id' => $this->id,
             'error' => $error,
         ];

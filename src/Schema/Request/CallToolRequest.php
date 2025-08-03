@@ -22,36 +22,22 @@ use Mcp\Schema\JsonRpc\Request;
 class CallToolRequest extends Request
 {
     /**
-     * @param string                $name      the name of the tool to invoke
-     * @param array<string, mixed>  $arguments the arguments to pass to the tool
-     * @param ?array<string, mixed> $_meta     optional metadata to include in the request
+     * @param string               $name      the name of the tool to invoke
+     * @param array<string, mixed> $arguments the arguments to pass to the tool
      */
     public function __construct(
-        string|int $id,
         public readonly string $name,
         public readonly array $arguments,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'name' => $name,
-            'arguments' => (object) $arguments,
-        ];
-
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'tools/call', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('tools/call' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a call tool request');
-        }
+        return 'tools/call';
+    }
 
-        $params = $request->params ?? [];
-
+    protected static function fromParams(?array $params): Request
+    {
         if (!isset($params['name']) || !\is_string($params['name'])) {
             throw new InvalidArgumentException('Missing or invalid "name" parameter for tools/call.');
         }
@@ -67,10 +53,16 @@ class CallToolRequest extends Request
         }
 
         return new self(
-            $request->id,
             $params['name'],
             $arguments,
-            $params['_meta'] ?? null
         );
+    }
+
+    protected function getParams(): ?array
+    {
+        return [
+            'name' => $this->name,
+            'arguments' => $this->arguments,
+        ];
     }
 }

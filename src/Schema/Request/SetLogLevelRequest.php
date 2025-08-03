@@ -23,39 +23,33 @@ use Mcp\Schema\JsonRpc\Request;
 class SetLogLevelRequest extends Request
 {
     /**
-     * @param LoggingLevel          $level The level of logging that the client wants to receive from the server. The server
-     *                                     should send all logs at this level and higher (i.e., more severe) to the client as
-     *                                     notifications/message.
-     * @param ?array<string, mixed> $_meta optional metadata to include in the request
+     * @param LoggingLevel $level The level of logging that the client wants to receive from the server. The server
+     *                            should send all logs at this level and higher (i.e., more severe) to the client as
+     *                            notifications/message.
      */
     public function __construct(
-        string|int $id,
         public readonly LoggingLevel $level,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'level' => $level->value,
-        ];
-
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct($id, 'logging/setLevel', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('logging/setLevel' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a logging/setLevel request');
-        }
+        return 'logging/setLevel';
+    }
 
-        $params = $request->params;
-
+    protected static function fromParams(?array $params): self
+    {
         if (!isset($params['level']) || !\is_string($params['level']) || empty($params['level'])) {
-            throw new InvalidArgumentException('Missing or invalid "level" parameter for logging/setLevel.');
+            throw new InvalidArgumentException('Missing or invalid "level" parameter for "logging/setLevel".');
         }
 
-        return new self($request->id, LoggingLevel::from($params['level']), $params['_meta'] ?? null);
+        return new self(LoggingLevel::from($params['level']));
+    }
+
+    protected function getParams(): ?array
+    {
+        return [
+            'level' => $this->level->value,
+        ];
     }
 }

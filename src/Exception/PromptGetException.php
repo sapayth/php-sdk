@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Prompt\PromptGet;
+use Mcp\Schema\Request\GetPromptRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,9 +19,9 @@ use Mcp\Capability\Prompt\PromptGet;
 final class PromptGetException extends \RuntimeException implements ExceptionInterface
 {
     public function __construct(
-        public readonly PromptGet $promptGet,
+        public readonly GetPromptRequest $request,
         ?\Throwable $previous = null,
     ) {
-        parent::__construct(\sprintf('Handling prompt "%s" failed with error: %s', $promptGet->name, $previous->getMessage()), previous: $previous);
+        parent::__construct(\sprintf('Handling prompt "%s" failed with error: "%s".', $request->name, $previous->getMessage()), previous: $previous);
     }
 }

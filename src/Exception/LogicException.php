@@ -9,16 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Mcp\Capability\Resource;
+namespace Mcp\Exception;
 
 /**
- * @author Tobias Nyholm <tobias.nyholm@gmail.com>
+ * @author Christopher Hertel <mail@christopher-hertel.de>
  */
-final class ResourceRead
+final class LogicException extends \LogicException implements ExceptionInterface
 {
-    public function __construct(
-        public readonly string $id,
-        public readonly string $uri,
-    ) {
-    }
 }

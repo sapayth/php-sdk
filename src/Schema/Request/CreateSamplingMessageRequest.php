@@ -40,10 +40,8 @@ class CreateSamplingMessageRequest extends Request
      * @param string[]|null         $stopSequences A list of sequences to stop sampling at. The client MAY ignore this request.
      * @param ?array<string, mixed> $metadata      Optional metadata to pass through to the LLM provider. The format of
      *                                             this metadata is provider-specific.
-     * @param ?array<string, mixed> $_meta         optional metadata to include in the request
      */
     public function __construct(
-        string|int $id,
         public readonly array $messages,
         public readonly int $maxTokens,
         public readonly ?ModelPreferences $preferences = null,
@@ -52,8 +50,43 @@ class CreateSamplingMessageRequest extends Request
         public readonly ?float $temperature = null,
         public readonly ?array $stopSequences = null,
         public readonly ?array $metadata = null,
-        public readonly ?array $_meta = null,
     ) {
+    }
+
+    public static function getMethod(): string
+    {
+        return 'sampling/createMessage';
+    }
+
+    protected static function fromParams(?array $params): Request
+    {
+        if (!isset($params['messages']) || !\is_array($params['messages'])) {
+            throw new \InvalidArgumentException('Missing or invalid "messages" parameter for sampling/createMessage.');
+        }
+
+        if (!isset($params['maxTokens']) || !\is_int($params['maxTokens'])) {
+            throw new \InvalidArgumentException('Missing or invalid "maxTokens" parameter for sampling/createMessage.');
+        }
+
+        $preferences = null;
+        if (isset($params['preferences'])) {
+            $preferences = ModelPreferences::fromArray($params['preferences']);
+        }
+
+        return new self(
+            $params['messages'],
+            $params['maxTokens'],
+            $preferences,
+            $params['systemPrompt'] ?? null,
+            $params['includeContext'] ?? null,
+            $params['temperature'] ?? null,
+            $params['stopSequences'] ?? null,
+            $params['metadata'] ?? null,
+        );
+    }
+
+    protected function getParams(): ?array
+    {
         $params = [
             'messages' => $this->messages,
             'maxTokens' => $this->maxTokens,
@@ -83,10 +116,6 @@ class CreateSamplingMessageRequest extends Request
             $params['metadata'] = $this->metadata;
         }
 
-        if (null !== $this->_meta) {
-            $params['_meta'] = $this->_meta;
-        }
-
-        parent::__construct($id, 'sampling/createMessage', $params);
+        return $params;
     }
 }

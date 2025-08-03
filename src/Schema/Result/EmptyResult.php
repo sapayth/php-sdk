@@ -32,8 +32,11 @@ class EmptyResult implements ResultInterface
         return new self();
     }
 
-    public function jsonSerialize(): \stdClass
+    /**
+     * @return array{}
+     */
+    public function jsonSerialize(): array
     {
-        return new \stdClass();
+        return [];
     }
 }

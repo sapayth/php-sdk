@@ -9,10 +9,13 @@
  * file that was distributed with this source code.
  */
 
-namespace Mcp\Tests\Fixtures;
+namespace Mcp\Server\Transport;
 
 use Mcp\Server\TransportInterface;
 
+/**
+ * @author Tobias Nyholm <tobias.nyholm@gmail.com>
+ */
 class InMemoryTransport implements TransportInterface
 {
     private bool $connected = true;

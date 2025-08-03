@@ -24,40 +24,24 @@ use Mcp\Schema\JsonRpc\Request;
 class InitializeRequest extends Request
 {
     /**
-     * @param string|int            $id              the ID of the request
-     * @param string                $protocolVersion The latest version of the Model Context Protocol that the client supports. The client MAY decide to support older versions as well.
-     * @param ClientCapabilities    $capabilities    the capabilities of the client
-     * @param Implementation        $clientInfo      information about the client
-     * @param ?array<string, mixed> $_meta           additional metadata about the request
+     * @param string             $protocolVersion The latest version of the Model Context Protocol that the client supports. The client MAY decide to support older versions as well.
+     * @param ClientCapabilities $capabilities    the capabilities of the client
+     * @param Implementation     $clientInfo      information about the client
      */
     public function __construct(
-        string|int $id,
         public readonly string $protocolVersion,
         public readonly ClientCapabilities $capabilities,
         public readonly Implementation $clientInfo,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'protocolVersion' => $this->protocolVersion,
-            'capabilities' => $this->capabilities,
-            'clientInfo' => $this->clientInfo,
-        ];
-
-        if (null !== $this->_meta) {
-            $params['_meta'] = $this->_meta;
-        }
-
-        parent::__construct($id, 'initialize', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('initialize' !== $request->method) {
-            throw new InvalidArgumentException('Request is not an initialize request');
-        }
+        return 'initialize';
+    }
 
-        $params = $request->params;
-
+    protected static function fromParams(?array $params): Request
+    {
         if (!isset($params['protocolVersion'])) {
             throw new InvalidArgumentException('protocolVersion is required');
         }
@@ -72,6 +56,15 @@ class InitializeRequest extends Request
         }
         $clientInfo = Implementation::fromArray($params['clientInfo']);
 
-        return new self($request->id, $params['protocolVersion'], $capabilities, $clientInfo, $params['_meta'] ?? null);
+        return new self($params['protocolVersion'], $capabilities, $clientInfo);
+    }
+
+    protected function getParams(): ?array
+    {
+        return [
+            'protocolVersion' => $this->protocolVersion,
+            'capabilities' => $this->capabilities,
+            'clientInfo' => $this->clientInfo,
+        ];
     }
 }

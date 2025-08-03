@@ -14,12 +14,12 @@ namespace Mcp\Capability;
 use Mcp\Capability\Prompt\CollectionInterface;
 use Mcp\Capability\Prompt\IdentifierInterface;
 use Mcp\Capability\Prompt\MetadataInterface;
-use Mcp\Capability\Prompt\PromptGet;
-use Mcp\Capability\Prompt\PromptGetResult;
 use Mcp\Capability\Prompt\PromptGetterInterface;
 use Mcp\Exception\InvalidCursorException;
 use Mcp\Exception\PromptGetException;
 use Mcp\Exception\PromptNotFoundException;
+use Mcp\Schema\Request\GetPromptRequest;
+use Mcp\Schema\Result\GetPromptResult;
 
 /**
  * A collection of prompts. All prompts need to implement IdentifierInterface.
@@ -60,18 +60,18 @@ class PromptChain implements PromptGetterInterface, CollectionInterface
         }
     }
 
-    public function get(PromptGet $input): PromptGetResult
+    public function get(GetPromptRequest $request): GetPromptResult
     {
         foreach ($this->items as $item) {
-            if ($item instanceof PromptGetterInterface && $input->name === $item->getName()) {
+            if ($item instanceof PromptGetterInterface && $request->name === $item->getName()) {
                 try {
-                    return $item->get($input);
+                    return $item->get($request);
                 } catch (\Throwable $e) {
-                    throw new PromptGetException($input, $e);
+                    throw new PromptGetException($request, $e);
                 }
             }
         }
 
-        throw new PromptNotFoundException($input);
+        throw new PromptNotFoundException($request);
     }
 }

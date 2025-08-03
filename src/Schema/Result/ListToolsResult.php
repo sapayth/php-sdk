@@ -55,11 +55,6 @@ class ListToolsResult implements ResultInterface
         );
     }
 
-    public static function fromResponse(Response $response): self
-    {
-        return self::fromArray($response->result);
-    }
-
     /**
      * @return array{
      *     tools: array<Tool>,

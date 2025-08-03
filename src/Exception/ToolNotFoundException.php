@@ -11,7 +11,7 @@
 
 namespace Mcp\Exception;
 
-use Mcp\Capability\Tool\ToolCall;
+use Mcp\Schema\Request\CallToolRequest;
 
 /**
  * @author Tobias Nyholm <tobias.nyholm@gmail.com>
@@ -19,8 +19,8 @@ use Mcp\Capability\Tool\ToolCall;
 final class ToolNotFoundException extends \RuntimeException implements NotFoundExceptionInterface
 {
     public function __construct(
-        public readonly ToolCall $toolCall,
+        public readonly CallToolRequest $request,
     ) {
-        parent::__construct(\sprintf('Tool not found for call: "%s"', $toolCall->name));
+        parent::__construct(\sprintf('Tool not found for call: "%s".', $request->name));
     }
 }

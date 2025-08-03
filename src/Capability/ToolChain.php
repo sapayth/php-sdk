@@ -14,12 +14,12 @@ namespace Mcp\Capability;
 use Mcp\Capability\Tool\CollectionInterface;
 use Mcp\Capability\Tool\IdentifierInterface;
 use Mcp\Capability\Tool\MetadataInterface;
-use Mcp\Capability\Tool\ToolCall;
-use Mcp\Capability\Tool\ToolCallResult;
 use Mcp\Capability\Tool\ToolExecutorInterface;
 use Mcp\Exception\InvalidCursorException;
 use Mcp\Exception\ToolExecutionException;
 use Mcp\Exception\ToolNotFoundException;
+use Mcp\Schema\Request\CallToolRequest;
+use Mcp\Schema\Result\CallToolResult;
 
 /**
  * A collection of tools. All tools need to implement IdentifierInterface.
@@ -60,18 +60,18 @@ class ToolChain implements ToolExecutorInterface, CollectionInterface
         }
     }
 
-    public function call(ToolCall $input): ToolCallResult
+    public function call(CallToolRequest $request): CallToolResult
     {
         foreach ($this->items as $item) {
-            if ($item instanceof ToolExecutorInterface && $input->name === $item->getName()) {
+            if ($item instanceof ToolExecutorInterface && $request->name === $item->getName()) {
                 try {
-                    return $item->call($input);
+                    return $item->call($request);
                 } catch (\Throwable $e) {
-                    throw new ToolExecutionException($input, $e);
+                    throw new ToolExecutionException($request, $e);
                 }
             }
         }
 
-        throw new ToolNotFoundException($input);
+        throw new ToolNotFoundException($request);
     }
 }

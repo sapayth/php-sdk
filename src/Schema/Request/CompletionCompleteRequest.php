@@ -26,34 +26,20 @@ class CompletionCompleteRequest extends Request
     /**
      * @param PromptReference|ResourceReference    $ref      the prompt or resource to complete
      * @param array{ name: string, value: string } $argument the argument to complete
-     * @param ?array<string, mixed>                $_meta    optional metadata to include in the request
      */
     public function __construct(
-        string|int $id,
         public readonly PromptReference|ResourceReference $ref,
         public readonly array $argument,
-        public readonly ?array $_meta = null,
     ) {
-        $params = [
-            'ref' => $this->ref,
-            'argument' => $this->argument,
-        ];
-
-        if (null !== $this->_meta) {
-            $params['_meta'] = $this->_meta;
-        }
-
-        parent::__construct($id, 'completion/complete', $params);
     }
 
-    public static function fromRequest(Request $request): self
+    public static function getMethod(): string
     {
-        if ('completion/complete' !== $request->method) {
-            throw new InvalidArgumentException('Request is not a completion/complete request');
-        }
+        return 'completion/complete';
+    }
 
-        $params = $request->params;
-
+    protected static function fromParams(?array $params): Request
+    {
         if (!isset($params['ref']) || !\is_array($params['ref'])) {
             throw new InvalidArgumentException('Missing or invalid "ref" parameter for completion/complete.');
         }
@@ -68,6 +54,14 @@ class CompletionCompleteRequest extends Request
             throw new InvalidArgumentException('Missing or invalid "argument" parameter for completion/complete.');
         }
 
-        return new self($request->id, $ref, $params['argument'], $params['_meta'] ?? null);
+        return new self($ref, $params['argument']);
+    }
+
+    protected function getParams(): ?array
+    {
+        return [
+            'ref' => $this->ref,
+            'argument' => $this->argument,
+        ];
     }
 }

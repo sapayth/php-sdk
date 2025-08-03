@@ -19,33 +19,29 @@ use Mcp\Schema\JsonRpc\Notification;
  */
 class ResourceUpdatedNotification extends Notification
 {
-    /**
-     * @param array<string, mixed>|null $_meta
-     */
     public function __construct(
         public readonly string $uri,
-        public readonly ?array $_meta = null,
     ) {
-        $params = ['uri' => $uri];
-        if (null !== $_meta) {
-            $params['_meta'] = $_meta;
-        }
-
-        parent::__construct('notifications/resources/updated', $params);
     }
 
-    public static function fromNotification(Notification $notification): self
+    public static function getMethod(): string
     {
-        if ('notifications/resources/updated' !== $notification->method) {
-            throw new InvalidArgumentException('Notification is not a notifications/resources/updated notification');
+        return 'notifications/resources/updated';
+    }
+
+    protected static function fromParams(?array $params): Notification
+    {
+        if (null === $params || !isset($params['uri']) || !\is_string($params['uri'])) {
+            throw new InvalidArgumentException('Invalid or missing "uri" parameter for notifications/resources/updated notification.');
         }
 
-        $params = $notification->params;
+        return new self($params['uri']);
+    }
 
-        if (!isset($params['uri']) || !\is_string($params['uri'])) {
-            throw new InvalidArgumentException('Missing or invalid uri parameter for notifications/resources/updated notification');
-        }
-
-        return new self($params['uri'], $params['_meta'] ?? null);
+    protected function getParams(): ?array
+    {
+        return [
+            'uri' => $this->uri,
+        ];
     }
 }
