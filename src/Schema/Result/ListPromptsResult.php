@@ -64,7 +64,7 @@ class ListPromptsResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $result = [
-            'prompts' => $this->prompts,
+            'prompts' => array_values($this->prompts),
         ];
 
         if ($this->nextCursor) {

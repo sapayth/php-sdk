@@ -82,7 +82,7 @@ class InitializeResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $data = [
-            'protocolVersion' => MessageInterface::JSONRPC_VERSION,
+            'protocolVersion' => MessageInterface::PROTOCOL_VERSION,
             'capabilities' => $this->capabilities,
             'serverInfo' => $this->serverInfo,
         ];

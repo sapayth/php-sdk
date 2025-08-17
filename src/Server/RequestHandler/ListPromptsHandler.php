@@ -11,11 +11,9 @@
 
 namespace Mcp\Server\RequestHandler;
 
-use Mcp\Capability\Prompt\CollectionInterface;
+use Mcp\Capability\Registry;
 use Mcp\Schema\JsonRpc\HasMethodInterface;
 use Mcp\Schema\JsonRpc\Response;
-use Mcp\Schema\Prompt;
-use Mcp\Schema\PromptArgument;
 use Mcp\Schema\Request\ListPromptsRequest;
 use Mcp\Schema\Result\ListPromptsResult;
 use Mcp\Server\MethodHandlerInterface;
@@ -26,7 +24,7 @@ use Mcp\Server\MethodHandlerInterface;
 final class ListPromptsHandler implements MethodHandlerInterface
 {
     public function __construct(
-        private readonly CollectionInterface $collection,
+        private readonly Registry $registry,
         private readonly int $pageSize = 20,
     ) {
     }
@@ -41,19 +39,7 @@ final class ListPromptsHandler implements MethodHandlerInterface
         \assert($message instanceof ListPromptsRequest);
 
         $cursor = null;
-        $prompts = [];
-
-        $metadataList = $this->collection->getMetadata($this->pageSize, $message->cursor);
-
-        foreach ($metadataList as $metadata) {
-            $cursor = $metadata->getName();
-            $prompts[] = new Prompt(
-                $metadata->getName(),
-                $metadata->getDescription(),
-                array_map(fn (array $data) => PromptArgument::fromArray($data), $metadata->getArguments()),
-            );
-        }
-
+        $prompts = $this->registry->getPrompts($this->pageSize, $message->cursor);
         $nextCursor = (null !== $cursor && \count($prompts) === $this->pageSize) ? $cursor : null;
 
         return new Response(

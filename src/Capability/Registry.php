@@ -11,54 +11,79 @@
 
 namespace Mcp\Capability;
 
-use Mcp\Capability\Registry\RegisteredElement;
-use Mcp\Capability\Registry\RegisteredPrompt;
-use Mcp\Capability\Registry\RegisteredResource;
-use Mcp\Capability\Registry\RegisteredResourceTemplate;
-use Mcp\Capability\Registry\RegisteredTool;
+use Mcp\Capability\Registry\ElementReference;
+use Mcp\Capability\Registry\PromptReference;
+use Mcp\Capability\Registry\ReferenceHandler;
+use Mcp\Capability\Registry\ResourceReference;
+use Mcp\Capability\Registry\ResourceTemplateReference;
+use Mcp\Capability\Registry\ToolReference;
 use Mcp\Event\PromptListChangedEvent;
 use Mcp\Event\ResourceListChangedEvent;
 use Mcp\Event\ResourceTemplateListChangedEvent;
 use Mcp\Event\ToolListChangedEvent;
+use Mcp\Exception\InvalidArgumentException;
+use Mcp\Schema\Content\PromptMessage;
+use Mcp\Schema\Content\ResourceContents;
 use Mcp\Schema\Prompt;
 use Mcp\Schema\Resource;
 use Mcp\Schema\ResourceTemplate;
+use Mcp\Schema\ServerCapabilities;
 use Mcp\Schema\Tool;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * @phpstan-import-type CallableArray from RegisteredElement
+ * @phpstan-import-type CallableArray from ElementReference
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
 class Registry
 {
     /**
-     * @var array<string, RegisteredTool>
+     * @var array<string, ToolReference>
      */
     private array $tools = [];
 
     /**
-     * @var array<string, RegisteredResource>
+     * @var array<string, ResourceReference>
      */
     private array $resources = [];
 
     /**
-     * @var array<string, RegisteredPrompt>
+     * @var array<string, PromptReference>
      */
     private array $prompts = [];
 
     /**
-     * @var array<string, RegisteredResourceTemplate>
+     * @var array<string, ResourceTemplateReference>
      */
     private array $resourceTemplates = [];
 
     public function __construct(
+        private readonly ReferenceHandler $referenceHandler = new ReferenceHandler(),
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
+    }
+
+    public function getCapabilities(): ServerCapabilities
+    {
+        if (!$this->hasElements()) {
+            $this->logger->info('No capabilities registered on server.');
+        }
+
+        return new ServerCapabilities(
+            tools: true, // [] !== $this->tools,
+            toolsListChanged: $this->eventDispatcher instanceof EventDispatcherInterface,
+            resources: [] !== $this->resources || [] !== $this->resourceTemplates,
+            resourcesSubscribe: false,
+            resourcesListChanged: $this->eventDispatcher instanceof EventDispatcherInterface,
+            prompts: [] !== $this->prompts,
+            promptsListChanged: $this->eventDispatcher instanceof EventDispatcherInterface,
+            logging: false, // true,
+            completions: true,
+        );
     }
 
     /**
@@ -75,7 +100,7 @@ class Registry
             return;
         }
 
-        $this->tools[$toolName] = new RegisteredTool($tool, $handler, $isManual);
+        $this->tools[$toolName] = new ToolReference($tool, $handler, $isManual);
 
         $this->eventDispatcher?->dispatch(new ToolListChangedEvent());
     }
@@ -94,7 +119,7 @@ class Registry
             return;
         }
 
-        $this->resources[$uri] = new RegisteredResource($resource, $handler, $isManual);
+        $this->resources[$uri] = new ResourceReference($resource, $handler, $isManual);
 
         $this->eventDispatcher?->dispatch(new ResourceListChangedEvent());
     }
@@ -118,7 +143,7 @@ class Registry
             return;
         }
 
-        $this->resourceTemplates[$uriTemplate] = new RegisteredResourceTemplate($template, $handler, $isManual, $completionProviders);
+        $this->resourceTemplates[$uriTemplate] = new ResourceTemplateReference($template, $handler, $isManual, $completionProviders);
 
         $this->eventDispatcher?->dispatch(new ResourceTemplateListChangedEvent());
     }
@@ -142,12 +167,14 @@ class Registry
             return;
         }
 
-        $this->prompts[$promptName] = new RegisteredPrompt($prompt, $handler, $isManual, $completionProviders);
+        $this->prompts[$promptName] = new PromptReference($prompt, $handler, $isManual, $completionProviders);
 
         $this->eventDispatcher?->dispatch(new PromptListChangedEvent());
     }
 
-    /** Checks if any elements (manual or discovered) are currently registered. */
+    /**
+     * Checks if any elements (manual or discovered) are currently registered.
+     */
     public function hasElements(): bool
     {
         return !empty($this->tools)
@@ -193,12 +220,42 @@ class Registry
         }
     }
 
-    public function getTool(string $name): ?RegisteredTool
+    public function handleCallTool(string $name, array $arguments): array
+    {
+        $reference = $this->getTool($name);
+
+        if (null === $reference) {
+            throw new InvalidArgumentException(\sprintf('Tool "%s" is not registered.', $name));
+        }
+
+        return $reference->formatResult(
+            $this->referenceHandler->handle($reference, $arguments)
+        );
+    }
+
+    public function getTool(string $name): ?ToolReference
     {
         return $this->tools[$name] ?? null;
     }
 
-    public function getResource(string $uri, bool $includeTemplates = true): RegisteredResource|RegisteredResourceTemplate|null
+    /**
+     * @return ResourceContents[]
+     */
+    public function handleReadResource(string $uri): array
+    {
+        $reference = $this->getResource($uri);
+
+        if (null === $reference) {
+            throw new InvalidArgumentException(\sprintf('Resource "%s" is not registered.', $uri));
+        }
+
+        return $reference->formatResult(
+            $this->referenceHandler->handle($reference, ['uri' => $uri]),
+            $uri,
+        );
+    }
+
+    public function getResource(string $uri, bool $includeTemplates = true): ResourceReference|ResourceTemplateReference|null
     {
         $registration = $this->resources[$uri] ?? null;
         if ($registration) {
@@ -220,32 +277,54 @@ class Registry
         return null;
     }
 
-    public function getResourceTemplate(string $uriTemplate): ?RegisteredResourceTemplate
+    public function getResourceTemplate(string $uriTemplate): ?ResourceTemplateReference
     {
         return $this->resourceTemplates[$uriTemplate] ?? null;
     }
 
-    public function getPrompt(string $name): ?RegisteredPrompt
+    /**
+     * @return PromptMessage[]
+     */
+    public function handleGetPrompt(string $name, ?array $arguments): array
+    {
+        $reference = $this->getPrompt($name);
+
+        if (null === $reference) {
+            throw new InvalidArgumentException(\sprintf('Prompt "%s" is not registered.', $name));
+        }
+
+        return $reference->formatResult(
+            $this->referenceHandler->handle($reference, $arguments)
+        );
+    }
+
+    public function getPrompt(string $name): ?PromptReference
     {
         return $this->prompts[$name] ?? null;
     }
 
-    /** @return array<string, Tool> */
+    /**
+     * @return array<string, Tool>
+     */
     public function getTools(): array
     {
-        return array_map(fn ($tool) => $tool->tool, $this->tools);
+        return array_map(fn (ToolReference $tool) => $tool->tool, $this->tools);
     }
 
-    /** @return array<string, resource> */
+    /**
+     * @return array<string, resource>
+     */
     public function getResources(): array
     {
-        return array_map(fn ($resource) => $resource->schema, $this->resources);
+        return array_map(fn (ResourceReference $resource) => $resource->schema, $this->resources);
     }
 
-    /** @return array<string, Prompt> */
+    /**
+     * @return array<string, Prompt>
+     */
     public function getPrompts(): array
     {
-        return array_map(fn ($prompt) => $prompt->prompt, $this->prompts);
+        return array_map(fn (PromptReference $prompt) => $prompt->prompt, $this->prompts);
     }
 
     /** @return array<string, ResourceTemplate> */

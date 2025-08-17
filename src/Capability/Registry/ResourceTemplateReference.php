@@ -21,24 +21,26 @@ use Mcp\Schema\Result\CompletionCompleteResult;
 use Psr\Container\ContainerInterface;
 
 /**
- * @phpstan-import-type CallableArray from RegisteredElement
+ * @phpstan-import-type Handler from ElementReference
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class RegisteredResourceTemplate extends RegisteredElement
+class ResourceTemplateReference extends ElementReference
 {
     /**
      * @var array<int, string>
      */
-    protected array $variableNames;
+    private array $variableNames;
+
     /**
      * @var array<string, string>
      */
-    protected array $uriVariables;
-    protected string $uriTemplateRegex;
+    private array $uriVariables;
+
+    private string $uriTemplateRegex;
 
     /**
-     * @param callable|CallableArray|string      $handler
+     * @param Handler                            $handler
      * @param array<string, class-string|object> $completionProviders
      */
     public function __construct(
@@ -50,32 +52,6 @@ class RegisteredResourceTemplate extends RegisteredElement
         parent::__construct($handler, $isManual);
 
         $this->compileTemplate();
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function fromArray(array $data): self|false
-    {
-        try {
-            if (!isset($data['schema']) || !isset($data['handler'])) {
-                return false;
-            }
-
-            $completionProviders = [];
-            foreach ($data['completionProviders'] ?? [] as $argument => $provider) {
-                $completionProviders[$argument] = unserialize($provider);
-            }
-
-            return new self(
-                ResourceTemplate::fromArray($data['schema']),
-                $data['handler'],
-                $data['isManual'] ?? false,
-                $completionProviders,
-            );
-        } catch (\Throwable) {
-            return false;
-        }
     }
 
     /**
@@ -186,7 +162,7 @@ class RegisteredResourceTemplate extends RegisteredElement
      * - array: Converted to JSON if MIME type is application/json or contains 'json'
      *          For other MIME types, will try to convert to JSON with a warning
      */
-    protected function formatResult(mixed $readResult, string $uri, ?string $mimeType): array
+    protected function formatResult(mixed $readResult, string $uri, ?string $mimeType = null): array
     {
         if ($readResult instanceof ResourceContents) {
             return [$readResult];
@@ -331,27 +307,5 @@ class RegisteredResourceTemplate extends RegisteredElement
         }
 
         return 'text/plain';
-    }
-
-    /**
-     * @return array{
-     *     schema: ResourceTemplate,
-     *     completionProviders: array<string, string>,
-     *     handler: callable|CallableArray|string,
-     *     isManual: bool,
-     * }
-     */
-    public function jsonSerialize(): array
-    {
-        $completionProviders = [];
-        foreach ($this->completionProviders as $argument => $provider) {
-            $completionProviders[$argument] = serialize($provider);
-        }
-
-        return [
-            'schema' => $this->resourceTemplate,
-            'completionProviders' => $completionProviders,
-            ...parent::jsonSerialize(),
-        ];
     }
 }

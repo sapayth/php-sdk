@@ -16,64 +16,49 @@ use Mcp\Exception\RegistryException;
 use Psr\Container\ContainerInterface;
 
 /**
- * @phpstan-type CallableArray array{0: object|string, 1: string}
- *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class RegisteredElement implements \JsonSerializable
+class ReferenceHandler
 {
-    /**
-     * @var callable|CallableArray|string
-     */
-    public readonly mixed $handler;
-    public readonly bool $isManual;
-
-    /**
-     * @param callable|CallableArray|string $handler
-     */
     public function __construct(
-        callable|array|string $handler,
-        bool $isManual = false,
+        private readonly ?ContainerInterface $container = null,
     ) {
-        $this->handler = $handler;
-        $this->isManual = $isManual;
     }
 
     /**
      * @param array<string, mixed> $arguments
      */
-    public function handle(ContainerInterface $container, array $arguments): mixed
+    public function handle(ElementReference $reference, array $arguments): mixed
     {
-        if (\is_string($this->handler)) {
-            if (class_exists($this->handler) && method_exists($this->handler, '__invoke')) {
-                $reflection = new \ReflectionMethod($this->handler, '__invoke');
+        if (\is_string($reference->handler)) {
+            if (class_exists($reference->handler) && method_exists($reference->handler, '__invoke')) {
+                $reflection = new \ReflectionMethod($reference->handler, '__invoke');
+                $instance = $this->getClassInstance($reference->handler);
                 $arguments = $this->prepareArguments($reflection, $arguments);
-                $instance = $container->get($this->handler);
 
                 return \call_user_func($instance, ...$arguments);
             }
 
-            if (\function_exists($this->handler)) {
-                $reflection = new \ReflectionFunction($this->handler);
+            if (\function_exists($reference->handler)) {
+                $reflection = new \ReflectionFunction($reference->handler);
                 $arguments = $this->prepareArguments($reflection, $arguments);
 
-                return \call_user_func($this->handler, ...$arguments);
+                return \call_user_func($reference->handler, ...$arguments);
             }
         }
 
-        if (\is_callable($this->handler)) {
-            $reflection = $this->getReflectionForCallable($this->handler);
+        if (\is_callable($reference->handler)) {
+            $reflection = $this->getReflectionForCallable($reference->handler);
             $arguments = $this->prepareArguments($reflection, $arguments);
 
-            return \call_user_func($this->handler, ...$arguments);
+            return \call_user_func($reference->handler, ...$arguments);
         }
 
-        if (\is_array($this->handler)) {
-            [$className, $methodName] = $this->handler;
+        if (\is_array($reference->handler)) {
+            [$className, $methodName] = $reference->handler;
             $reflection = new \ReflectionMethod($className, $methodName);
+            $instance = $this->getClassInstance($className);
             $arguments = $this->prepareArguments($reflection, $arguments);
-
-            $instance = $container->get($className);
 
             return \call_user_func([$instance, $methodName], ...$arguments);
         }
@@ -81,12 +66,21 @@ class RegisteredElement implements \JsonSerializable
         throw new InvalidArgumentException('Invalid handler type');
     }
 
+    private function getClassInstance(string $className): object
+    {
+        if (null !== $this->container && $this->container->has($className)) {
+            return $this->container->get($className);
+        }
+
+        return new $className();
+    }
+
     /**
      * @param array<string, mixed> $arguments
      *
      * @return array<int, mixed>
      */
-    protected function prepareArguments(\ReflectionFunctionAbstract $reflection, array $arguments): array
+    private function prepareArguments(\ReflectionFunctionAbstract $reflection, array $arguments): array
     {
         $finalArgs = [];
 
@@ -271,19 +265,5 @@ class RegisteredElement implements \JsonSerializable
         }
 
         throw new InvalidArgumentException('Cannot cast value to array. Expected array.');
-    }
-
-    /**
-     * @return array{
-     *     handler: callable|CallableArray|string,
-     *     isManual: bool,
-     * }
-     */
-    public function jsonSerialize(): array
-    {
-        return [
-            'handler' => $this->handler,
-            'isManual' => $this->isManual,
-        ];
     }
 }

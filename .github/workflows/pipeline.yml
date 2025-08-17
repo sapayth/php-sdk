@@ -34,7 +34,7 @@ jobs:
         run: composer install --no-scripts
 
       - name: Tests
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --exclude-group inspector
 
   qa:
     runs-on: ubuntu-latest

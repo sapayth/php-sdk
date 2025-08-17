@@ -14,17 +14,16 @@ namespace Mcp\Capability\Registry;
 use Mcp\Schema\Content\Content;
 use Mcp\Schema\Content\TextContent;
 use Mcp\Schema\Tool;
-use Psr\Container\ContainerInterface;
 
 /**
- * @phpstan-import-type CallableArray from RegisteredElement
+ * @phpstan-import-type Handler from ElementReference
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class RegisteredTool extends RegisteredElement
+class ToolReference extends ElementReference
 {
     /**
-     * @param callable|CallableArray|string $handler
+     * @param Handler $handler
      */
     public function __construct(
         public readonly Tool $tool,
@@ -32,40 +31,6 @@ class RegisteredTool extends RegisteredElement
         bool $isManual = false,
     ) {
         parent::__construct($handler, $isManual);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function fromArray(array $data): self|false
-    {
-        try {
-            if (!isset($data['schema']) || !isset($data['handler'])) {
-                return false;
-            }
-
-            return new self(
-                Tool::fromArray($data['schema']),
-                $data['handler'],
-                $data['isManual'] ?? false,
-            );
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Calls the underlying handler for this tool.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return Content[] the content items for CallToolResult
-     */
-    public function call(ContainerInterface $container, array $arguments): array
-    {
-        $result = $this->handle($container, $arguments);
-
-        return $this->formatResult($result);
     }
 
     /**
@@ -87,7 +52,7 @@ class RegisteredTool extends RegisteredElement
      *
      * @throws \JsonException if JSON encoding fails for non-Content array/object results
      */
-    private function formatResult(mixed $toolExecutionResult): array
+    public function formatResult(mixed $toolExecutionResult): array
     {
         if ($toolExecutionResult instanceof Content) {
             return [$toolExecutionResult];
@@ -145,20 +110,5 @@ class RegisteredTool extends RegisteredElement
         );
 
         return [new TextContent($jsonResult)];
-    }
-
-    /**
-     * @return array{
-     *     schema: Tool,
-     *     handler: callable|CallableArray|string,
-     *     isManual: bool,
-     * }
-     */
-    public function jsonSerialize(): array
-    {
-        return [
-            'schema' => $this->tool,
-            ...parent::jsonSerialize(),
-        ];
     }
 }

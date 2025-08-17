@@ -64,7 +64,7 @@ class ListResourceTemplatesResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $result = [
-            'resourceTemplates' => $this->resourceTemplates,
+            'resourceTemplates' => array_values($this->resourceTemplates),
         ];
 
         if ($this->nextCursor) {

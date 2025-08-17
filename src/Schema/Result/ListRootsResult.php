@@ -42,7 +42,7 @@ class ListRootsResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $result = [
-            'roots' => $this->roots,
+            'roots' => array_values($this->roots),
         ];
 
         if (null !== $this->_meta) {

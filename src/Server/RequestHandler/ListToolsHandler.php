@@ -11,12 +11,11 @@
 
 namespace Mcp\Server\RequestHandler;
 
-use Mcp\Capability\Tool\CollectionInterface;
+use Mcp\Capability\Registry;
 use Mcp\Schema\JsonRpc\HasMethodInterface;
 use Mcp\Schema\JsonRpc\Response;
 use Mcp\Schema\Request\ListToolsRequest;
 use Mcp\Schema\Result\ListToolsResult;
-use Mcp\Schema\Tool;
 use Mcp\Server\MethodHandlerInterface;
 
 /**
@@ -26,7 +25,7 @@ use Mcp\Server\MethodHandlerInterface;
 final class ListToolsHandler implements MethodHandlerInterface
 {
     public function __construct(
-        private readonly CollectionInterface $collection,
+        private readonly Registry $registry,
         private readonly int $pageSize = 20,
     ) {
     }
@@ -41,24 +40,7 @@ final class ListToolsHandler implements MethodHandlerInterface
         \assert($message instanceof ListToolsRequest);
 
         $cursor = null;
-        $tools = [];
-
-        $metadataList = $this->collection->getMetadata($this->pageSize, $message->cursor);
-
-        foreach ($metadataList as $tool) {
-            $cursor = $tool->getName();
-            $inputSchema = $tool->getInputSchema();
-            $tools[] = new Tool(
-                $tool->getName(),
-                [] === $inputSchema ? [
-                    'type' => 'object',
-                    '$schema' => 'http://json-schema.org/draft-07/schema#',
-                ] : $inputSchema,
-                $tool->getDescription(),
-                null,
-            );
-        }
-
+        $tools = $this->registry->getTools($this->pageSize, $message->cursor);
         $nextCursor = (null !== $cursor && \count($tools) === $this->pageSize) ? $cursor : null;
 
         return new Response(

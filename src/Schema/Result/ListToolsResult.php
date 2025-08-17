@@ -64,7 +64,7 @@ class ListToolsResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $result = [
-            'tools' => $this->tools,
+            'tools' => array_values($this->tools),
         ];
 
         if ($this->nextCursor) {

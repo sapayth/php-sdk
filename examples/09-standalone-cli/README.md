@@ -1,15 +1,13 @@
-# Example app with CLI
+# Standalone example app with CLI
 
-This is just for testing and debugging purposes.
+This is just for testing and debugging purposes. Different from the other examples, this one does not use the same
+autoloader, but installs the SDK via path repository and therefore has mostly decoupled dependencies.
 
-
-Install and create symlink with:
+Install dependencies:
 
 ```bash
-cd /path/to/your/project/examples/cli
+cd /path/to/your/project/examples/09-standalone-cli
 composer update
-rm -rf vendor/mcp/sdk/src
-ln -s /path/to/your/project/src /path/to/your/project/examples/cli/vendor/mcp/sdk/src
 ```
 
 Run the CLI with:

@@ -11,14 +11,18 @@
 
 namespace Mcp\JsonRpc;
 
+use Mcp\Capability\Registry;
 use Mcp\Exception\ExceptionInterface;
 use Mcp\Exception\HandlerNotFoundException;
 use Mcp\Exception\InvalidInputMessageException;
 use Mcp\Exception\NotFoundExceptionInterface;
+use Mcp\Schema\Implementation;
 use Mcp\Schema\JsonRpc\Error;
 use Mcp\Schema\JsonRpc\HasMethodInterface;
 use Mcp\Schema\JsonRpc\Response;
 use Mcp\Server\MethodHandlerInterface;
+use Mcp\Server\NotificationHandler;
+use Mcp\Server\RequestHandler;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -45,6 +49,28 @@ class Handler
         $this->methodHandlers = $methodHandlers instanceof \Traversable ? iterator_to_array($methodHandlers) : $methodHandlers;
     }
 
+    public static function make(
+        Registry $registry,
+        Implementation $implementation,
+        LoggerInterface $logger = new NullLogger(),
+    ): self {
+        return new self(
+            MessageFactory::make(),
+            [
+                new NotificationHandler\InitializedHandler(),
+                new RequestHandler\InitializeHandler($registry->getCapabilities(), $implementation),
+                new RequestHandler\PingHandler(),
+                new RequestHandler\ListPromptsHandler($registry),
+                new RequestHandler\GetPromptHandler($registry),
+                new RequestHandler\ListResourcesHandler($registry),
+                new RequestHandler\ReadResourceHandler($registry),
+                new RequestHandler\CallToolHandler($registry, $logger),
+                new RequestHandler\ListToolsHandler($registry),
+            ],
+            $logger,
+        );
+    }
+
     /**
      * @return iterable<string|null>
      *
@@ -53,12 +79,12 @@ class Handler
      */
     public function process(string $input): iterable
     {
-        $this->logger->info('Received message to process', ['message' => $input]);
+        $this->logger->info('Received message to process.', ['message' => $input]);
 
         try {
             $messages = $this->messageFactory->create($input);
         } catch (\JsonException $e) {
-            $this->logger->warning('Failed to decode json message', ['exception' => $e]);
+            $this->logger->warning('Failed to decode json message.', ['exception' => $e]);
 
             yield $this->encodeResponse(Error::forParseError($e->getMessage()));
 
@@ -67,12 +93,14 @@ class Handler
 
         foreach ($messages as $message) {
             if ($message instanceof InvalidInputMessageException) {
-                $this->logger->warning('Failed to create message', ['exception' => $message]);
+                $this->logger->warning('Failed to create message.', ['exception' => $message]);
                 yield $this->encodeResponse(Error::forInvalidRequest($message->getMessage(), 0));
                 continue;
             }
 
-            $this->logger->info('Decoded incoming message', ['message' => $message]);
+            $this->logger->debug(\sprintf('Decoded incoming message "%s".', $message::class), [
+                'method' => $message->getMethod(),
+            ]);
 
             try {
                 yield $this->encodeResponse($this->handle($message));
@@ -105,7 +133,7 @@ class Handler
             return null;
         }
 
-        $this->logger->info('Encoding response', ['response' => $response]);
+        $this->logger->info('Encoding response.', ['response' => $response]);
 
         if ($response instanceof Response && [] === $response->result) {
             return json_encode($response, \JSON_THROW_ON_ERROR | \JSON_FORCE_OBJECT);
@@ -122,11 +150,20 @@ class Handler
      */
     private function handle(HasMethodInterface $message): Response|Error|null
     {
+        $this->logger->info(\sprintf('Handling message for method "%s".', $message::getMethod()), [
+            'message' => $message,
+        ]);
+
         $handled = false;
         foreach ($this->methodHandlers as $handler) {
             if ($handler->supports($message)) {
                 $return = $handler->handle($message);
                 $handled = true;
+
+                $this->logger->debug(\sprintf('Message handled by "%s".', $handler::class), [
+                    'method' => $message::getMethod(),
+                    'response' => $return,
+                ]);
 
                 if (null !== $return) {
                     return $return;

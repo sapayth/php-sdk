@@ -64,7 +64,7 @@ class ListResourcesResult implements ResultInterface
     public function jsonSerialize(): array
     {
         $result = [
-            'resources' => $this->resources,
+            'resources' => array_values($this->resources),
         ];
 
         if (null !== $this->nextCursor) {

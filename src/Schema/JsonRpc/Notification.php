@@ -27,7 +27,7 @@ abstract class Notification implements HasMethodInterface, MessageInterface
     /**
      * @var array<string, mixed>|null
      */
-    protected ?array $meta;
+    protected ?array $meta = null;
 
     abstract public static function getMethod(): string;
 

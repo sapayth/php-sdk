@@ -9,23 +9,27 @@
  * file that was distributed with this source code.
  */
 
-namespace Mcp\Server\Transport\Stdio;
+namespace Mcp\Server\Transport;
 
 use Mcp\Server\TransportInterface;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\StreamableInputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Heavily inspired by https://jolicode.com/blog/mcp-the-open-protocol-that-turns-llm-chatbots-into-intelligent-agents.
  */
-final class SymfonyConsoleTransport implements TransportInterface
+class StdioTransport implements TransportInterface
 {
     private string $buffer = '';
 
+    /**
+     * @param resource $input
+     * @param resource $output
+     */
     public function __construct(
-        private readonly InputInterface $input,
-        private readonly OutputInterface $output,
+        private $input = \STDIN,
+        private $output = \STDOUT,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -40,12 +44,16 @@ final class SymfonyConsoleTransport implements TransportInterface
 
     public function receive(): \Generator
     {
-        $stream = $this->input instanceof StreamableInputInterface ? $this->input->getStream() ?? \STDIN : \STDIN;
-        $line = fgets($stream);
+        $line = fgets($this->input);
+
+        $this->logger->debug('Received message on StdioTransport.', [
+            'line' => $line,
+        ]);
+
         if (false === $line) {
             return;
         }
-        $this->buffer .= \STDIN === $stream ? rtrim($line).\PHP_EOL : $line;
+        $this->buffer .= rtrim($line).\PHP_EOL;
         if (str_contains($this->buffer, \PHP_EOL)) {
             $lines = explode(\PHP_EOL, $this->buffer);
             $this->buffer = array_pop($lines);
@@ -56,7 +64,9 @@ final class SymfonyConsoleTransport implements TransportInterface
 
     public function send(string $data): void
     {
-        $this->output->writeln($data);
+        $this->logger->debug('Sending data to client via StdioTransport.', ['data' => $data]);
+
+        fwrite($this->output, $data.\PHP_EOL);
     }
 
     public function close(): void

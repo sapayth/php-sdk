@@ -15,10 +15,10 @@ use Mcp\Capability\Discovery\Discoverer;
 use Mcp\Capability\Prompt\Completion\EnumCompletionProvider;
 use Mcp\Capability\Prompt\Completion\ListCompletionProvider;
 use Mcp\Capability\Registry;
-use Mcp\Capability\Registry\RegisteredPrompt;
-use Mcp\Capability\Registry\RegisteredResource;
-use Mcp\Capability\Registry\RegisteredResourceTemplate;
-use Mcp\Capability\Registry\RegisteredTool;
+use Mcp\Capability\Registry\PromptReference;
+use Mcp\Capability\Registry\ResourceReference;
+use Mcp\Capability\Registry\ResourceTemplateReference;
+use Mcp\Capability\Registry\ToolReference;
 use Mcp\Tests\Capability\Attribute\CompletionProviderFixture;
 use Mcp\Tests\Capability\Discovery\Fixtures\DiscoverableToolHandler;
 use Mcp\Tests\Capability\Discovery\Fixtures\InvocablePromptFixture;
@@ -46,7 +46,7 @@ class DiscoveryTest extends TestCase
         $this->assertCount(4, $tools);
 
         $greetUserTool = $this->registry->getTool('greet_user');
-        $this->assertInstanceOf(RegisteredTool::class, $greetUserTool);
+        $this->assertInstanceOf(ToolReference::class, $greetUserTool);
         $this->assertFalse($greetUserTool->isManual);
         $this->assertEquals('greet_user', $greetUserTool->tool->name);
         $this->assertEquals('Greets a user by name.', $greetUserTool->tool->description);
@@ -54,13 +54,13 @@ class DiscoveryTest extends TestCase
         $this->assertArrayHasKey('name', $greetUserTool->tool->inputSchema['properties'] ?? []);
 
         $repeatActionTool = $this->registry->getTool('repeatAction');
-        $this->assertInstanceOf(RegisteredTool::class, $repeatActionTool);
+        $this->assertInstanceOf(ToolReference::class, $repeatActionTool);
         $this->assertEquals('A tool with more complex parameters and inferred name/description.', $repeatActionTool->tool->description);
         $this->assertTrue($repeatActionTool->tool->annotations->readOnlyHint);
         $this->assertEquals(['count', 'loudly', 'mode'], array_keys($repeatActionTool->tool->inputSchema['properties'] ?? []));
 
         $invokableCalcTool = $this->registry->getTool('InvokableCalculator');
-        $this->assertInstanceOf(RegisteredTool::class, $invokableCalcTool);
+        $this->assertInstanceOf(ToolReference::class, $invokableCalcTool);
         $this->assertFalse($invokableCalcTool->isManual);
         $this->assertEquals([InvocableToolFixture::class, '__invoke'], $invokableCalcTool->handler);
 
@@ -72,13 +72,13 @@ class DiscoveryTest extends TestCase
         $this->assertCount(3, $resources);
 
         $appVersionRes = $this->registry->getResource('app://info/version');
-        $this->assertInstanceOf(RegisteredResource::class, $appVersionRes);
+        $this->assertInstanceOf(ResourceReference::class, $appVersionRes);
         $this->assertFalse($appVersionRes->isManual);
         $this->assertEquals('app_version', $appVersionRes->schema->name);
         $this->assertEquals('text/plain', $appVersionRes->schema->mimeType);
 
         $invokableStatusRes = $this->registry->getResource('invokable://config/status');
-        $this->assertInstanceOf(RegisteredResource::class, $invokableStatusRes);
+        $this->assertInstanceOf(ResourceReference::class, $invokableStatusRes);
         $this->assertFalse($invokableStatusRes->isManual);
         $this->assertEquals([InvocableResourceFixture::class, '__invoke'], $invokableStatusRes->handler);
 
@@ -86,22 +86,22 @@ class DiscoveryTest extends TestCase
         $this->assertCount(4, $prompts);
 
         $storyPrompt = $this->registry->getPrompt('creative_story_prompt');
-        $this->assertInstanceOf(RegisteredPrompt::class, $storyPrompt);
+        $this->assertInstanceOf(PromptReference::class, $storyPrompt);
         $this->assertFalse($storyPrompt->isManual);
         $this->assertCount(2, $storyPrompt->prompt->arguments);
         $this->assertEquals(CompletionProviderFixture::class, $storyPrompt->completionProviders['genre']);
 
         $simplePrompt = $this->registry->getPrompt('simpleQuestionPrompt');
-        $this->assertInstanceOf(RegisteredPrompt::class, $simplePrompt);
+        $this->assertInstanceOf(PromptReference::class, $simplePrompt);
         $this->assertFalse($simplePrompt->isManual);
 
         $invokableGreeter = $this->registry->getPrompt('InvokableGreeterPrompt');
-        $this->assertInstanceOf(RegisteredPrompt::class, $invokableGreeter);
+        $this->assertInstanceOf(PromptReference::class, $invokableGreeter);
         $this->assertFalse($invokableGreeter->isManual);
         $this->assertEquals([InvocablePromptFixture::class, '__invoke'], $invokableGreeter->handler);
 
         $contentCreatorPrompt = $this->registry->getPrompt('content_creator');
-        $this->assertInstanceOf(RegisteredPrompt::class, $contentCreatorPrompt);
+        $this->assertInstanceOf(PromptReference::class, $contentCreatorPrompt);
         $this->assertFalse($contentCreatorPrompt->isManual);
         $this->assertCount(3, $contentCreatorPrompt->completionProviders);
 
@@ -109,14 +109,14 @@ class DiscoveryTest extends TestCase
         $this->assertCount(4, $templates);
 
         $productTemplate = $this->registry->getResourceTemplate('product://{region}/details/{productId}');
-        $this->assertInstanceOf(RegisteredResourceTemplate::class, $productTemplate);
+        $this->assertInstanceOf(ResourceTemplateReference::class, $productTemplate);
         $this->assertFalse($productTemplate->isManual);
         $this->assertEquals('product_details_template', $productTemplate->resourceTemplate->name);
         $this->assertEquals(CompletionProviderFixture::class, $productTemplate->completionProviders['region']);
         $this->assertEqualsCanonicalizing(['region', 'productId'], $productTemplate->getVariableNames());
 
         $invokableUserTemplate = $this->registry->getResourceTemplate('invokable://user-profile/{userId}');
-        $this->assertInstanceOf(RegisteredResourceTemplate::class, $invokableUserTemplate);
+        $this->assertInstanceOf(ResourceTemplateReference::class, $invokableUserTemplate);
         $this->assertFalse($invokableUserTemplate->isManual);
         $this->assertEquals([InvocableResourceTemplateFixture::class, '__invoke'], $invokableUserTemplate->handler);
     }
@@ -124,7 +124,7 @@ class DiscoveryTest extends TestCase
     public function testDoesNotDiscoverElementsFromExcludedDirectories()
     {
         $this->discoverer->discover(__DIR__, ['Fixtures']);
-        $this->assertInstanceOf(RegisteredTool::class, $this->registry->getTool('hidden_subdir_tool'));
+        $this->assertInstanceOf(ToolReference::class, $this->registry->getTool('hidden_subdir_tool'));
 
         $this->registry->clear();
 
@@ -160,7 +160,7 @@ class DiscoveryTest extends TestCase
         $this->discoverer->discover(__DIR__, ['Fixtures']);
 
         $contentPrompt = $this->registry->getPrompt('content_creator');
-        $this->assertInstanceOf(RegisteredPrompt::class, $contentPrompt);
+        $this->assertInstanceOf(PromptReference::class, $contentPrompt);
         $this->assertCount(3, $contentPrompt->completionProviders);
 
         $typeProvider = $contentPrompt->completionProviders['type'];
@@ -173,7 +173,7 @@ class DiscoveryTest extends TestCase
         $this->assertInstanceOf(EnumCompletionProvider::class, $priorityProvider);
 
         $contentTemplate = $this->registry->getResourceTemplate('content://{category}/{slug}');
-        $this->assertInstanceOf(RegisteredResourceTemplate::class, $contentTemplate);
+        $this->assertInstanceOf(ResourceTemplateReference::class, $contentTemplate);
         $this->assertCount(1, $contentTemplate->completionProviders);
 
         $categoryProvider = $contentTemplate->completionProviders['category'];

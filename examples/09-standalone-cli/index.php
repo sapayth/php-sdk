@@ -17,7 +17,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 $debug = (bool) ($_SERVER['DEBUG'] ?? false);
 
 // Setup input, output and logger
-$input = new SymfonyConsole\Input\ArgvInput($argv);
 $output = new SymfonyConsole\Output\ConsoleOutput($debug ? OutputInterface::VERBOSITY_VERY_VERBOSE : OutputInterface::VERBOSITY_NORMAL);
 $logger = new SymfonyConsole\Logger\ConsoleLogger($output);
 
@@ -31,8 +30,8 @@ $jsonRpcHandler = new Mcp\JsonRpc\Handler(
 // Set up the server
 $sever = new Mcp\Server($jsonRpcHandler, $logger);
 
-// Create the transport layer using Symfony Console
-$transport = new Mcp\Server\Transport\Stdio\SymfonyConsoleTransport($input, $output);
+// Create the transport layer using Stdio
+$transport = new Mcp\Server\Transport\StdioTransport(logger: $logger);
 
 // Start our application
 $sever->connect($transport);

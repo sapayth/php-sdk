@@ -11,6 +11,7 @@
 
 namespace Mcp\Schema\Request;
 
+use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\Content\SamplingMessage;
 use Mcp\Schema\JsonRpc\Request;
 use Mcp\Schema\ModelPreferences;
@@ -61,11 +62,11 @@ class CreateSamplingMessageRequest extends Request
     protected static function fromParams(?array $params): Request
     {
         if (!isset($params['messages']) || !\is_array($params['messages'])) {
-            throw new \InvalidArgumentException('Missing or invalid "messages" parameter for sampling/createMessage.');
+            throw new InvalidArgumentException('Missing or invalid "messages" parameter for sampling/createMessage.');
         }
 
         if (!isset($params['maxTokens']) || !\is_int($params['maxTokens'])) {
-            throw new \InvalidArgumentException('Missing or invalid "maxTokens" parameter for sampling/createMessage.');
+            throw new InvalidArgumentException('Missing or invalid "maxTokens" parameter for sampling/createMessage.');
         }
 
         $preferences = null;

@@ -11,12 +11,13 @@
 
 namespace Mcp\Server\RequestHandler;
 
-use Mcp\Capability\Prompt\PromptGetterInterface;
+use Mcp\Capability\Registry;
 use Mcp\Exception\ExceptionInterface;
 use Mcp\Schema\JsonRpc\Error;
 use Mcp\Schema\JsonRpc\HasMethodInterface;
 use Mcp\Schema\JsonRpc\Response;
 use Mcp\Schema\Request\GetPromptRequest;
+use Mcp\Schema\Result\GetPromptResult;
 use Mcp\Server\MethodHandlerInterface;
 
 /**
@@ -25,7 +26,7 @@ use Mcp\Server\MethodHandlerInterface;
 final class GetPromptHandler implements MethodHandlerInterface
 {
     public function __construct(
-        private readonly PromptGetterInterface $getter,
+        private readonly Registry $registry,
     ) {
     }
 
@@ -39,11 +40,11 @@ final class GetPromptHandler implements MethodHandlerInterface
         \assert($message instanceof GetPromptRequest);
 
         try {
-            $result = $this->getter->get($message);
+            $messages = $this->registry->handleGetPrompt($message->name, $message->arguments);
         } catch (ExceptionInterface) {
             return Error::forInternalError('Error while handling prompt', $message->getId());
         }
 
-        return new Response($message->getId(), $result);
+        return new Response($message->getId(), new GetPromptResult($messages));
     }
 }

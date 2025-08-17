@@ -13,8 +13,8 @@ namespace Mcp\Schema\Result;
 
 use Mcp\Exception\InvalidArgumentException;
 use Mcp\Schema\Content\BlobResourceContents;
+use Mcp\Schema\Content\ResourceContents;
 use Mcp\Schema\Content\TextResourceContents;
-use Mcp\Schema\JsonRpc\Response;
 use Mcp\Schema\JsonRpc\ResultInterface;
 
 /**
@@ -30,7 +30,7 @@ class ReadResourceResult implements ResultInterface
     /**
      * Create a new ReadResourceResult.
      *
-     * @param array<TextResourceContents|BlobResourceContents> $contents The contents of the resource
+     * @param ResourceContents[] $contents The contents of the resource
      */
     public function __construct(
         public readonly array $contents,

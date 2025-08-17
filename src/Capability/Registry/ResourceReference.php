@@ -17,17 +17,16 @@ use Mcp\Schema\Content\EmbeddedResource;
 use Mcp\Schema\Content\ResourceContents;
 use Mcp\Schema\Content\TextResourceContents;
 use Mcp\Schema\Resource;
-use Psr\Container\ContainerInterface;
 
 /**
- * @phpstan-import-type CallableArray from RegisteredElement
+ * @phpstan-import-type Handler from ElementReference
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class RegisteredResource extends RegisteredElement
+class ResourceReference extends ElementReference
 {
     /**
-     * @param callable|CallableArray|string $handler
+     * @param Handler $handler
      */
     public function __construct(
         public readonly Resource $schema,
@@ -35,38 +34,6 @@ class RegisteredResource extends RegisteredElement
         bool $isManual = false,
     ) {
         parent::__construct($handler, $isManual);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function fromArray(array $data): self|false
-    {
-        try {
-            if (!isset($data['schema']) || !isset($data['handler'])) {
-                return false;
-            }
-
-            return new self(
-                Resource::fromArray($data['schema']),
-                $data['handler'],
-                $data['isManual'] ?? false,
-            );
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Reads the resource content.
-     *
-     * @return ResourceContents[] array of ResourceContents objects
-     */
-    public function read(ContainerInterface $container, string $uri): array
-    {
-        $result = $this->handle($container, ['uri' => $uri]);
-
-        return $this->formatResult($result, $uri, $this->schema->mimeType);
     }
 
     /**
@@ -91,7 +58,7 @@ class RegisteredResource extends RegisteredElement
      * - array: Converted to JSON if MIME type is application/json or contains 'json'
      *          For other MIME types, will try to convert to JSON with a warning
      */
-    protected function formatResult(mixed $readResult, string $uri, ?string $mimeType): array
+    public function formatResult(mixed $readResult, string $uri, ?string $mimeType = null): array
     {
         if ($readResult instanceof ResourceContents) {
             return [$readResult];
@@ -236,13 +203,5 @@ class RegisteredResource extends RegisteredElement
         }
 
         return 'text/plain';
-    }
-
-    public function jsonSerialize(): array
-    {
-        return [
-            'schema' => $this->schema,
-            ...parent::jsonSerialize(),
-        ];
     }
 }

@@ -11,11 +11,10 @@
 
 namespace Mcp\Server\RequestHandler;
 
-use Mcp\Capability\Resource\CollectionInterface;
+use Mcp\Capability\Registry;
 use Mcp\Schema\JsonRpc\HasMethodInterface;
 use Mcp\Schema\JsonRpc\Response;
 use Mcp\Schema\Request\ListResourcesRequest;
-use Mcp\Schema\Resource;
 use Mcp\Schema\Result\ListResourcesResult;
 use Mcp\Server\MethodHandlerInterface;
 
@@ -25,7 +24,7 @@ use Mcp\Server\MethodHandlerInterface;
 final class ListResourcesHandler implements MethodHandlerInterface
 {
     public function __construct(
-        private readonly CollectionInterface $collection,
+        private readonly Registry $registry,
         private readonly int $pageSize = 20,
     ) {
     }
@@ -40,22 +39,7 @@ final class ListResourcesHandler implements MethodHandlerInterface
         \assert($message instanceof ListResourcesRequest);
 
         $cursor = null;
-        $resources = [];
-
-        $metadataList = $this->collection->getMetadata($this->pageSize, $message->cursor);
-
-        foreach ($metadataList as $metadata) {
-            $cursor = $metadata->getUri();
-            $resources[] = new Resource(
-                $metadata->getUri(),
-                $metadata->getName(),
-                $metadata->getDescription(),
-                $metadata->getMimeType(),
-                null,
-                $metadata->getSize(),
-            );
-        }
-
+        $resources = $this->registry->getResources($this->pageSize, $message->cursor);
         $nextCursor = (null !== $cursor && \count($resources) === $this->pageSize) ? $cursor : null;
 
         return new Response(

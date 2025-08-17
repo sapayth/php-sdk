@@ -1,0 +1,51 @@
+{
+  "tools": [
+    {
+      "name": "calculate",
+      "description": "Performs a calculation based on the operation.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "number",
+            "description": "the first operand"
+          },
+          "b": {
+            "type": "number",
+            "description": "the second operand"
+          },
+          "operation": {
+            "type": "string",
+            "description": "the operation ('add', 'subtract', 'multiply', 'divide')"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "operation"
+        ]
+      }
+    },
+    {
+      "name": "update_setting",
+      "description": "Updates a specific configuration setting.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "setting": {
+            "type": "string",
+            "description": "the setting key ('precision' or 'allow_negative')"
+          },
+          "value": {
+            "description": "the new value (int for precision, bool for allow_negative)"
+          }
+        },
+        "required": [
+          "setting",
+          "value"
+        ]
+      }
+    }
+  ]
+}
+

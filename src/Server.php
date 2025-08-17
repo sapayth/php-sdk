@@ -12,6 +12,7 @@
 namespace Mcp;
 
 use Mcp\JsonRpc\Handler;
+use Mcp\Server\ServerBuilder;
 use Mcp\Server\TransportInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -27,10 +28,17 @@ final class Server
     ) {
     }
 
+    public static function make(): ServerBuilder
+    {
+        return new ServerBuilder();
+    }
+
     public function connect(TransportInterface $transport): void
     {
         $transport->initialize();
-        $this->logger->info('Transport initialized');
+        $this->logger->info('Transport initialized.', [
+            'transport' => $transport::class,
+        ]);
 
         while ($transport->isConnected()) {
             foreach ($transport->receive() as $message) {
@@ -47,7 +55,7 @@ final class Server
                         $transport->send($response);
                     }
                 } catch (\JsonException $e) {
-                    $this->logger->error('Failed to encode response to JSON', [
+                    $this->logger->error('Failed to encode response to JSON.', [
                         'message' => $message,
                         'exception' => $e,
                     ]);

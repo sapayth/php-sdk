@@ -26,63 +26,23 @@ use Mcp\Schema\Result\CompletionCompleteResult;
 use Psr\Container\ContainerInterface;
 
 /**
- * @phpstan-import-type CallableArray from RegisteredElement
+ * @phpstan-import-type Handler from ElementReference
  *
  * @author Kyrian Obikwelu <koshnawaza@gmail.com>
  */
-class RegisteredPrompt extends RegisteredElement
+class PromptReference extends ElementReference
 {
     /**
-     * @param callable|CallableArray|string      $handler
+     * @param Handler                            $handler
      * @param array<string, class-string|object> $completionProviders
      */
     public function __construct(
         public readonly Prompt $prompt,
-        callable|array|string $handler,
+        \Closure|array|string $handler,
         bool $isManual = false,
         public readonly array $completionProviders = [],
     ) {
         parent::__construct($handler, $isManual);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public static function fromArray(array $data): self|false
-    {
-        try {
-            if (!isset($data['schema']) || !isset($data['handler'])) {
-                return false;
-            }
-
-            $completionProviders = [];
-            foreach ($data['completionProviders'] ?? [] as $argument => $provider) {
-                $completionProviders[$argument] = unserialize($provider);
-            }
-
-            return new self(
-                Prompt::fromArray($data['schema']),
-                $data['handler'],
-                $data['isManual'] ?? false,
-                $completionProviders,
-            );
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * Gets the prompt messages.
-     *
-     * @param array<string, mixed> $arguments
-     *
-     * @return PromptMessage[]
-     */
-    public function get(ContainerInterface $container, array $arguments): array
-    {
-        $result = $this->handle($container, $arguments);
-
-        return $this->formatResult($result);
     }
 
     public function complete(ContainerInterface $container, string $argument, string $value): CompletionCompleteResult
@@ -122,14 +82,14 @@ class RegisteredPrompt extends RegisteredElement
      * @throws \RuntimeException if the result cannot be formatted
      * @throws \JsonException    if JSON encoding fails
      */
-    protected function formatResult(mixed $promptGenerationResult): array
+    public function formatResult(mixed $promptGenerationResult): array
     {
         if ($promptGenerationResult instanceof PromptMessage) {
             return [$promptGenerationResult];
         }
 
         if (!\is_array($promptGenerationResult)) {
-            throw new \RuntimeException('Prompt generator method must return an array of messages.');
+            throw new RuntimeException('Prompt generator method must return an array of messages.');
         }
 
         if (empty($promptGenerationResult)) {
@@ -199,7 +159,7 @@ class RegisteredPrompt extends RegisteredElement
             return $formattedMessages;
         }
 
-        throw new \RuntimeException('Invalid prompt generation result format.');
+        throw new RuntimeException('Invalid prompt generation result format.');
     }
 
     /**
@@ -210,12 +170,12 @@ class RegisteredPrompt extends RegisteredElement
         $indexStr = null !== $index ? " at index {$index}" : '';
 
         if (!\is_array($message) || !\array_key_exists('role', $message) || !\array_key_exists('content', $message)) {
-            throw new \RuntimeException("Invalid message format{$indexStr}. Expected an array with 'role' and 'content' keys.");
+            throw new RuntimeException("Invalid message format{$indexStr}. Expected an array with 'role' and 'content' keys.");
         }
 
         $role = $message['role'] instanceof Role ? $message['role'] : Role::tryFrom($message['role']);
         if (null === $role) {
-            throw new \RuntimeException("Invalid role '{$message['role']}' in prompt message{$indexStr}. Only 'user' or 'assistant' are supported.");
+            throw new RuntimeException("Invalid role '{$message['role']}' in prompt message{$indexStr}. Only 'user' or 'assistant' are supported.");
         }
 
         $content = $this->formatContent($message['content'], $index);
@@ -237,7 +197,7 @@ class RegisteredPrompt extends RegisteredElement
             ) {
                 return $content;
             }
-            throw new \RuntimeException("Invalid Content type{$indexStr}. PromptMessage only supports TextContent, ImageContent, AudioContent, or EmbeddedResource.");
+            throw new RuntimeException("Invalid Content type{$indexStr}. PromptMessage only supports TextContent, ImageContent, AudioContent, or EmbeddedResource.");
         }
 
         if (\is_string($content)) {
@@ -274,7 +234,7 @@ class RegisteredPrompt extends RegisteredElement
             'image' => $this->formatImageContent($content, $indexStr),
             'audio' => $this->formatAudioContent($content, $indexStr),
             'resource' => $this->formatResourceContent($content, $indexStr),
-            default => throw new \RuntimeException("Invalid content type '{$type}'{$indexStr}."),
+            default => throw new RuntimeException("Invalid content type '{$type}'{$indexStr}."),
         };
     }
 
@@ -347,22 +307,5 @@ class RegisteredPrompt extends RegisteredElement
         }
 
         return new EmbeddedResource($resourceObj);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function jsonSerialize(): array
-    {
-        $completionProviders = [];
-        foreach ($this->completionProviders as $argument => $provider) {
-            $completionProviders[$argument] = serialize($provider);
-        }
-
-        return [
-            'schema' => $this->prompt,
-            'completionProviders' => $completionProviders,
-            ...parent::jsonSerialize(),
-        ];
     }
 }

@@ -23,6 +23,7 @@ class Implementation implements \JsonSerializable
     public function __construct(
         public readonly string $name = 'app',
         public readonly string $version = 'dev',
+        public readonly ?string $description = null,
     ) {
     }
 
@@ -41,7 +42,7 @@ class Implementation implements \JsonSerializable
             throw new InvalidArgumentException('Invalid or missing "version" in Implementation data.');
         }
 
-        return new self($data['name'], $data['version']);
+        return new self($data['name'], $data['version'], $data['description'] ?? null);
     }
 
     /**
@@ -52,9 +53,15 @@ class Implementation implements \JsonSerializable
      */
     public function jsonSerialize(): array
     {
-        return [
+        $data = [
             'name' => $this->name,
             'version' => $this->version,
         ];
+
+        if (null !== $this->description) {
+            $data['description'] = $this->description;
+        }
+
+        return $data;
     }
 }
