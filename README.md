@@ -1,5 +1,12 @@
 # MCP PHP SDK
 
+> [!IMPORTANT]
+> Currently we are still in the process of merging [Symfony's MCP SDK](https://github.com/symfony/mcp-sdk) and
+> [PHP-MCP](https://github.com/php-mcp) components. Not all code paths are fully tested, complete or this package
+> may contain duplicate functionality or dead code.
+> If you want to help us stabilize the SDK, please see the
+> [issue tracker](https://github.com/modelcontextprotocol/php-sdk/issues).
+
 Low-level SDK implementation of the Model Context Protocol (MCP) in PHP.
 
 This project is a collaboration between the [PHP Foundation](https://thephp.foundation/) and the
