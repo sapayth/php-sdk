@@ -53,8 +53,8 @@ composer require mcp/sdk
 
 Since this package has no tagged releases yet, it is required to extend your `composer.json`:
 ```json
-    "minimum-stability": "dev",
-    "prefer-stable": true,
+"minimum-stability": "dev",
+"prefer-stable": true
 ```
 
 ## ⚡ Quick Start: Stdio Server with Discovery
