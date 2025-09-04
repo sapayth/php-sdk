@@ -216,19 +216,21 @@ final class ServerBuilder
      */
     public function build(): Server
     {
-        $container = $this->container ?? new Container();
-        $registry = new Registry(new ReferenceHandler($container), $this->eventDispatcher, $this->logger);
+        $logger = $this->logger ?? new NullLogger();
 
-        $this->registerManualElements($registry, $this->logger);
+        $container = $this->container ?? new Container();
+        $registry = new Registry(new ReferenceHandler($container), $this->eventDispatcher, $logger);
+
+        $this->registerManualElements($registry, $logger);
 
         if (null !== $this->discoveryBasePath) {
-            $discovery = new Discoverer($registry, $this->logger);
+            $discovery = new Discoverer($registry, $logger);
             $discovery->discover($this->discoveryBasePath, $this->discoveryScanDirs, $this->discoveryExcludeDirs);
         }
 
         return new Server(
-            Handler::make($registry, $this->serverInfo, $this->logger),
-            $this->logger,
+            Handler::make($registry, $this->serverInfo, $logger),
+            $logger,
         );
     }
 
